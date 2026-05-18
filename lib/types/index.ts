@@ -34,4 +34,10 @@ export type {
 
 export type { FeatureCard, NavItem } from "./navigation";
 
-export type { MapFilterId, MapItem, MapItemType } from "./map";
+export type {
+  MapCategoryFilterId,
+  MapFilterId,
+  MapItem,
+  MapItemType,
+  MapSortId,
+} from "./map";

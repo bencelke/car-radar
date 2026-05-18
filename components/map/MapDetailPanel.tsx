@@ -5,7 +5,11 @@ import Link from "next/link";
 
 import { GlassPanel } from "@/components/dashboard/glass-panel";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { googleMapsDirectionsUrl } from "@/lib/map/map-utils";
+import {
+  googleMapsDirectionsUrl,
+  metaNumber,
+  metaString,
+} from "@/lib/map/map-utils";
 import type { MapItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +44,19 @@ function normalizeUrl(url: string): string {
   return url;
 }
 
+function formatEventTime(iso?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
   const { t } = useLocale();
 
@@ -62,10 +79,23 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
       ? item.metadata.slug
       : null;
 
+  const clubName = metaString(item, "clubName");
+  const buildTags = metaString(item, "buildTags");
+  const services = metaString(item, "services");
+  const rating = metaNumber(item, "rating");
+  const interested = metaNumber(item, "interestedCount");
+  const memberCount = metaNumber(item, "memberCount");
+  const organizer = metaString(item, "organizerName");
+  const startTime = formatEventTime(metaString(item, "startTime"));
+  const statusLabel = metaString(item, "statusLabel");
+  const carLine = [metaString(item, "carYear"), metaString(item, "carMake"), metaString(item, "carModel")]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <GlassPanel
       className={cn(
-        "flex flex-col gap-4 p-5 lg:w-80 lg:shrink-0",
+        "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5 lg:w-80 lg:shrink-0",
         className
       )}
     >
@@ -80,19 +110,84 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
               {t.map.verified}
             </span>
           ) : null}
+          {statusLabel ? (
+            <span className="text-[10px] text-blue-300/90">{statusLabel}</span>
+          ) : null}
         </div>
         <h2 className="font-heading mt-2 text-lg font-semibold text-white">
           {item.title}
         </h2>
+        {item.type === "member" && carLine ? (
+          <p className="mt-0.5 text-xs text-blue-200/80">{carLine}</p>
+        ) : null}
         <p className="mt-1 text-xs text-white/50">
-          {item.category} · {item.city}, {item.country}
+          {item.category}
+          {item.area ? ` · ${item.area}` : ""} · {item.city}, {item.country}
         </p>
+        {clubName && item.type === "member" ? (
+          <p className="mt-1 text-xs text-white/40">
+            {t.map.clubLabel}: {clubName}
+          </p>
+        ) : null}
       </div>
 
       {item.description ? (
-        <p className="text-sm leading-relaxed text-white/65">
-          {item.description}
+        <p className="text-sm leading-relaxed text-white/65">{item.description}</p>
+      ) : null}
+
+      {buildTags ? (
+        <div>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            {t.map.buildLabel}
+          </p>
+          <p className="text-xs text-white/60">{buildTags}</p>
+        </div>
+      ) : null}
+
+      {services ? (
+        <div>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            {t.map.servicesLabel}
+          </p>
+          <p className="text-xs text-white/60">{services}</p>
+        </div>
+      ) : null}
+
+      {rating != null && rating > 0 ? (
+        <p className="text-xs text-amber-200/90">★ {rating.toFixed(1)}</p>
+      ) : null}
+
+      {startTime ? (
+        <p className="text-xs text-purple-200/80">{startTime}</p>
+      ) : null}
+
+      {interested != null && interested > 0 ? (
+        <p className="text-xs text-white/50">
+          {interested.toLocaleString()} interested
         </p>
+      ) : null}
+
+      {organizer ? (
+        <p className="text-xs text-white/50">{organizer}</p>
+      ) : null}
+
+      {memberCount != null && memberCount > 0 ? (
+        <p className="text-xs text-white/50">
+          {memberCount.toLocaleString()} members
+        </p>
+      ) : null}
+
+      {item.tags && item.tags.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {item.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-md border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] text-white/55"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
       ) : null}
 
       <div className="mt-auto flex flex-col gap-2">
@@ -114,7 +209,7 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10"
           >
             <ExternalLink className="size-4" />
-            {t.map.website}
+            {t.map.openWebsite}
           </a>
         ) : null}
 
@@ -126,7 +221,7 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10"
           >
             <Share2 className="size-4" />
-            {t.map.instagram}
+            {t.map.openInstagram}
           </a>
         ) : null}
 

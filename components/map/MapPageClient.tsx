@@ -8,6 +8,7 @@ import { MapDetailPanel } from "@/components/map/MapDetailPanel";
 import { MapFallback } from "@/components/map/MapFallback";
 import { MapFilterBar } from "@/components/map/MapFilterBar";
 import { MapLegend } from "@/components/map/MapLegend";
+import { MapSortControl } from "@/components/map/MapSortControl";
 import { GlassPanel } from "@/components/dashboard/glass-panel";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import {
@@ -15,35 +16,23 @@ import {
   logMapboxTokenDiagnostic,
   type MapErrorCategory,
 } from "@/lib/map/map-config";
-import { mapItemMatchesFilter, searchMapItems } from "@/lib/map/map-utils";
-import type { MapFilterId, MapItem } from "@/lib/types";
+import {
+  countMapItemsByType,
+  filterMapItems,
+  searchMapItems,
+  sortMapItems,
+} from "@/lib/map/map-utils";
+import type { MapCategoryFilterId, MapFilterId, MapItem, MapSortId } from "@/lib/types";
 
 type MapPageClientProps = {
   items: MapItem[];
 };
 
-function countByFilter(items: MapItem[]): Record<MapFilterId, number> {
-  const base: Record<MapFilterId, number> = {
-    all: items.length,
-    club: 0,
-    member: 0,
-    event: 0,
-    shop: 0,
-    zone: 0,
-  };
-  for (const item of items) {
-    if (item.type === "club") base.club++;
-    if (item.type === "member") base.member++;
-    if (item.type === "event") base.event++;
-    if (item.type === "shop") base.shop++;
-    if (item.type === "zone") base.zone++;
-  }
-  return base;
-}
-
 export function MapPageClient({ items }: MapPageClientProps) {
   const { t } = useLocale();
   const [filter, setFilter] = useState<MapFilterId>("all");
+  const [categoryFilter, setCategoryFilter] = useState<MapCategoryFilterId>("all");
+  const [sortMode, setSortMode] = useState<MapSortId>("featured");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapStatus, setMapStatus] = useState<MapLoadStatus>("loading");
@@ -62,12 +51,15 @@ export function MapPageClient({ items }: MapPageClientProps) {
     [items, search]
   );
 
-  const visible = useMemo(
-    () => searched.filter((item) => mapItemMatchesFilter(item, filter)),
-    [searched, filter]
-  );
+  const counts = useMemo(() => countMapItemsByType(searched), [searched]);
 
-  const counts = useMemo(() => countByFilter(searched), [searched]);
+  const visible = useMemo(() => {
+    const filtered = filterMapItems(searched, {
+      typeFilter: filter,
+      categoryFilter,
+    });
+    return sortMapItems(filtered, sortMode);
+  }, [searched, filter, categoryFilter, sortMode]);
 
   const selectedItem = useMemo(() => {
     if (!selectedId) return null;
@@ -105,19 +97,28 @@ export function MapPageClient({ items }: MapPageClientProps) {
             {t.map.subtitle}
           </p>
         </div>
-        <div className="relative w-full lg:max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t.map.searchPlaceholder}
-            className="w-full rounded-xl border border-white/10 bg-[#0B1118]/90 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/35 focus:border-blue-500/40 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-          />
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:max-w-md lg:flex-col lg:items-stretch">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t.map.searchPlaceholder}
+              className="w-full rounded-xl border border-white/10 bg-[#0B1118]/90 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/35 focus:border-blue-500/40 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+            />
+          </div>
+          <MapSortControl value={sortMode} onChange={setSortMode} className="w-full sm:w-auto" />
         </div>
       </div>
 
-      <MapFilterBar active={filter} counts={counts} onChange={setFilter} />
+      <MapFilterBar
+        active={filter}
+        counts={counts}
+        onChange={setFilter}
+        categoryFilter={categoryFilter}
+        onCategoryChange={setCategoryFilter}
+      />
 
       <p className="text-xs text-white/40">{visibleLabel}</p>
 
@@ -131,7 +132,8 @@ export function MapPageClient({ items }: MapPageClientProps) {
               selectedId={selectedId}
               onSelectItem={(item) => setSelectedId(item.id)}
               onStatusChange={handleMapStatus}
-              showControls
+              showNativeControls
+              showCustomControls={false}
               enhanceMarkers
             />
           ) : null}

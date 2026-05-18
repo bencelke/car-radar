@@ -1,3 +1,4 @@
+import { getMarkerIconSvg } from "@/lib/map/marker-icons";
 import { MARKER_STYLES } from "@/lib/map/map-utils";
 import type { MapItem } from "@/lib/types";
 
@@ -9,16 +10,21 @@ export function createMapMarkerElement(
 ): HTMLDivElement {
   const style = MARKER_STYLES[item.type];
   const el = document.createElement("div");
-  el.className = `carradar-marker${selected ? " is-selected" : ""}`;
+  el.className = `carradar-marker carradar-marker--${item.type}${selected ? " is-selected" : ""}`;
   el.setAttribute("role", "button");
   el.setAttribute("aria-label", item.title);
   el.tabIndex = 0;
 
-  const size = item.type === "zone" ? 44 : 36;
+  const size = item.type === "zone" ? 44 : 38;
   const verified = item.verified;
   const enhanced = options?.enhanced ?? false;
-  const glowSize = enhanced ? 22 : 14;
-  const borderWidth = enhanced ? 2.5 : 2;
+  const glowSize = selected ? 30 : enhanced ? 24 : 16;
+  const borderWidth = selected ? 3 : enhanced ? 2.5 : 2;
+  const markerScale = selected ? 1.16 : 1;
+  const iconSize = item.type === "zone" ? 18 : 16;
+  const outerGlow = selected
+    ? `0 0 0 3px rgba(255,255,255,0.18), 0 0 ${glowSize}px ${style.glow}, 0 0 ${enhanced ? 14 : 10}px ${style.glow}`
+    : `0 0 ${glowSize}px ${style.glow}, 0 0 ${enhanced ? 10 : 6}px ${style.glow}`;
 
   el.innerHTML = `
     <div style="
@@ -28,17 +34,13 @@ export function createMapMarkerElement(
       border-radius: 9999px;
       background: ${style.bg};
       border: ${borderWidth}px solid ${style.border};
-      box-shadow: 0 0 ${glowSize}px ${style.glow}, 0 0 ${enhanced ? 8 : 4}px ${style.glow}, inset 0 0 8px rgba(255,255,255,0.06);
+      box-shadow: ${outerGlow}, inset 0 0 10px rgba(255,255,255,0.07);
+      transform: scale(${markerScale});
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: var(--font-heading, system-ui), sans-serif;
-      font-size: ${item.type === "zone" ? "11px" : "13px"};
-      font-weight: 700;
-      color: ${style.border};
-      letter-spacing: 0.02em;
     ">
-      ${style.letter}
+      ${getMarkerIconSvg(item.type, style.iconColor, iconSize)}
       ${
         verified
           ? `<span style="

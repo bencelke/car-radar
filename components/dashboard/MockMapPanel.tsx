@@ -1,9 +1,9 @@
 "use client";
 
-import { Layers, Minus, Navigation, Plus } from "lucide-react";
-
 import { GlassPanel } from "@/components/dashboard/glass-panel";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { MapControls } from "@/components/map/MapControls";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { accentStyles } from "@/lib/config/accents";
 import { dashboardStats } from "@/lib/mock-data/car-radar";
 import type { MapPin } from "@/lib/types";
@@ -20,6 +20,8 @@ export function MockMapPanel({
   onPinSelect,
   mapPins,
 }: MockMapPanelProps) {
+  const { t } = useLocale();
+
   return (
     <GlassPanel className="relative flex min-h-[420px] flex-col overflow-hidden lg:min-h-[520px]">
       <MapSurface />
@@ -82,27 +84,16 @@ export function MockMapPanel({
           type="button"
           className="rounded-full border border-white/[0.1] bg-[#111827]/90 px-4 py-2 text-xs font-medium text-[#F8FAFC] backdrop-blur-md transition hover:border-[#3B82F6]/40 hover:shadow-[0_0_20px_-6px_rgba(59,130,246,0.4)]"
         >
-          Search this area
+          {t.map.searchThisArea}
         </button>
       </div>
 
-      <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1.5">
-        {[
-          { icon: Plus, label: "Zoom in" },
-          { icon: Minus, label: "Zoom out" },
-          { icon: Navigation, label: "Locate" },
-          { icon: Layers, label: "Layers" },
-        ].map(({ icon: Icon, label }) => (
-          <button
-            key={label}
-            type="button"
-            aria-label={label}
-            className="flex size-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#111827]/90 text-[#64748B] backdrop-blur-md transition hover:border-white/[0.12] hover:text-[#CBD5E1]"
-          >
-            <Icon className="size-3.5" />
-          </button>
-        ))}
-      </div>
+      <MapControls
+        variant="dashboard"
+        disabled
+        fullMapHref="/map"
+        className="absolute right-3 top-1/2 z-20 -translate-y-1/2"
+      />
     </GlassPanel>
   );
 }

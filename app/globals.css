@@ -193,8 +193,18 @@
   transition: transform 0.15s ease;
 }
 
-.carradar-marker:hover,
-.carradar-marker.is-selected {
-  transform: scale(1.08);
+.carradar-marker:hover {
+  transform: scale(1.06);
   z-index: 10;
+}
+
+.carradar-marker.is-selected {
+  transform: scale(1.12);
+  z-index: 20;
+}
+
+.carradar-map-controls--dashboard {
+  box-shadow:
+    0 8px 32px -8px rgba(0, 0, 0, 0.65),
+    0 0 24px -8px rgba(59, 130, 246, 0.15);
 }

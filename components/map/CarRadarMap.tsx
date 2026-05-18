@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
+import { MapControls } from "@/components/map/MapControls";
 import { createMapMarkerElement } from "@/components/map/MapMarker";
 import {
   classifyMapboxError,
@@ -33,7 +34,12 @@ type CarRadarMapProps = {
   onStatusChange?: (status: MapLoadStatus, category?: MapErrorCategory) => void;
   variant?: CarRadarMapVariant;
   heightClassName?: string;
+  /** @deprecated Prefer showNativeControls */
   showControls?: boolean;
+  showNativeControls?: boolean;
+  showCustomControls?: boolean;
+  showOpenFullMap?: boolean;
+  fullMapHref?: string;
   showLegend?: boolean;
   enableInteraction?: boolean;
   initialFilter?: MapFilterId;
@@ -80,14 +86,22 @@ export function CarRadarMap({
   variant = "full",
   heightClassName,
   showControls,
+  showNativeControls,
+  showCustomControls,
+  showOpenFullMap,
+  fullMapHref = "/map",
   enableInteraction = true,
   initialFilter: _initialFilter,
   enhanceMarkers = true,
 }: CarRadarMapProps) {
   const isDashboard = variant === "dashboard";
   const handleSelect = onSelectItem ?? onSelect ?? (() => undefined);
-  const controlsVisible = showControls ?? !isDashboard;
+  const useCustomControls = showCustomControls ?? isDashboard;
+  const useNativeControls =
+    showNativeControls ??
+    (showControls !== false && variant === "full" && !useCustomControls);
   const shellMinHeight = isDashboard ? "min-h-[420px]" : "min-h-[640px]";
+  const [mapReady, setMapReady] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("mapbox-gl").Map | null>(null);
@@ -132,7 +146,7 @@ export function CarRadarMap({
           cooperativeGestures: isDashboard,
         });
 
-        if (controlsVisible) {
+        if (useNativeControls) {
           map.addControl(
             new mapboxgl.NavigationControl({ visualizePitch: false }),
             "top-right"
@@ -223,6 +237,7 @@ export function CarRadarMap({
           }
 
           scheduleResize(map);
+          setMapReady(true);
           onStatusChangeRef.current?.("ready");
         });
 
@@ -240,13 +255,31 @@ export function CarRadarMap({
 
     return () => {
       cancelled = true;
+      setMapReady(false);
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
       mapboxRef.current = null;
     };
-  }, [accessToken, isDashboard, controlsVisible, enableInteraction, variant]);
+  }, [accessToken, isDashboard, useNativeControls, enableInteraction, variant]);
+
+  const handleZoomIn = useCallback(() => {
+    mapRef.current?.zoomIn({ duration: 280 });
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    mapRef.current?.zoomOut({ duration: 280 });
+  }, []);
+
+  const handleRecenter = useCallback(() => {
+    mapRef.current?.flyTo({
+      center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
+      zoom: isDashboard ? DASHBOARD_ZOOM : DEFAULT_ZOOM,
+      duration: 900,
+      essential: true,
+    });
+  }, [isDashboard]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -337,6 +370,16 @@ export function CarRadarMap({
           heightClassName
         )}
       />
+      {useCustomControls && mapReady ? (
+        <MapControls
+          variant={variant}
+          className="absolute right-3 top-1/2 z-[25] -translate-y-1/2"
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onRecenter={handleRecenter}
+          fullMapHref={showOpenFullMap ? fullMapHref : undefined}
+        />
+      ) : null}
     </div>
   );
 }

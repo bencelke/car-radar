@@ -12,24 +12,20 @@ import {
   getMapboxToken,
   type MapErrorCategory,
 } from "@/lib/map/map-config";
-import { filterMapItemsForDashboard } from "@/lib/map/map-utils";
 import { dashboardStats } from "@/lib/mock-data/car-radar";
 import type { MapItem, MapPin } from "@/lib/types";
 
 type DashboardMapPreviewProps = {
-  mapItems: MapItem[];
-  activeFilter: string;
+  visibleItems: MapItem[];
   selectedMapItemId: string | null;
   onMapItemSelect: (item: MapItem) => void;
-  /** Legacy mock fallback when token is missing */
   mapPins: MapPin[];
   selectedPinId: string | null;
   onPinSelect: (id: string) => void;
 };
 
 export function DashboardMapPreview({
-  mapItems,
-  activeFilter,
+  visibleItems,
   selectedMapItemId,
   onMapItemSelect,
   mapPins,
@@ -43,11 +39,6 @@ export function DashboardMapPreview({
   const [mapStatus, setMapStatus] = useState<MapLoadStatus>("loading");
   const [mapErrorCategory, setMapErrorCategory] =
     useState<MapErrorCategory>("unknown");
-
-  const visibleItems = useMemo(
-    () => filterMapItemsForDashboard(mapItems, activeFilter),
-    [mapItems, activeFilter]
-  );
 
   const fallbackVariant: MapErrorCategory = hasToken
     ? mapErrorCategory
@@ -81,7 +72,10 @@ export function DashboardMapPreview({
           setMapStatus(status);
           if (category) setMapErrorCategory(category);
         }}
-        showControls={false}
+        showCustomControls
+        showNativeControls={false}
+        showOpenFullMap
+        fullMapHref="/map"
         enableInteraction
         enhanceMarkers
         heightClassName="min-h-[420px] lg:min-h-[520px]"
@@ -95,6 +89,9 @@ export function DashboardMapPreview({
             </div>
           ))}
         </div>
+        <p className="pointer-events-none mt-2 text-[10px] text-white/40">
+          {t.map.visibleCount.replace("{count}", String(visibleItems.length))}
+        </p>
       </div>
 
       <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">

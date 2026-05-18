@@ -12,13 +12,13 @@ import {
 import { CommunitiesPanel } from "@/components/dashboard/CommunitiesPanel";
 import { EventsPanel } from "@/components/dashboard/EventsPanel";
 import { FilterPanel } from "@/components/dashboard/FilterPanel";
-import { PlaceDetailPanel } from "@/components/dashboard/PlaceDetailPanel";
 import { ShopsPanel } from "@/components/dashboard/ShopsPanel";
 import { SubmitPreviewPanel } from "@/components/dashboard/SubmitPreviewPanel";
 import { DashboardMapPreview } from "@/components/map/DashboardMapPreview";
+import { MapDetailPanel } from "@/components/map/MapDetailPanel";
 import type { DashboardData } from "@/lib/data/dashboard";
-import { resolvePlaceForMapItem } from "@/lib/map/dashboard-place";
-import type { MapItem } from "@/lib/types";
+import { filterMapItems, sortMapItems } from "@/lib/map/map-utils";
+import type { MapCategoryFilterId, MapFilterId, MapItem, MapSortId } from "@/lib/types";
 
 type DashboardViewProps = DashboardData;
 
@@ -27,12 +27,14 @@ export function DashboardView({
   events,
   communities,
   clubAreas,
-  places,
   mapPins,
   mapItems,
   selectedPlaceId: defaultPlaceId,
 }: DashboardViewProps) {
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<MapFilterId>("all");
+  const [categoryFilter, setCategoryFilter] =
+    useState<MapCategoryFilterId>("all");
+  const [sortMode, setSortMode] = useState<MapSortId>("featured");
   const [selectedMapItemId, setSelectedMapItemId] = useState<string | null>(
     `shop-${defaultPlaceId}`
   );
@@ -40,26 +42,19 @@ export function DashboardView({
     defaultPlaceId
   );
 
-  const selectedPlace = useMemo(() => {
-    if (selectedMapItemId) {
-      const item = mapItems.find((i) => i.id === selectedMapItemId);
-      if (item) return resolvePlaceForMapItem(item, places);
-    }
+  const visibleItems = useMemo(() => {
+    const filtered = filterMapItems(mapItems, { typeFilter, categoryFilter });
+    return sortMapItems(filtered, sortMode);
+  }, [mapItems, typeFilter, categoryFilter, sortMode]);
 
-    const byId = places.find((p) => p.id === selectedPinId);
-    if (byId) return byId;
-
-    const pin = mapPins.find((p) => p.id === selectedPinId);
-    if (pin) {
-      return (
-        places.find((p) => p.name === pin.name) ??
-        places.find((p) => p.id === defaultPlaceId) ??
-        places[0]
-      );
-    }
-
-    return places.find((p) => p.id === defaultPlaceId) ?? places[0];
-  }, [selectedMapItemId, mapItems, places, selectedPinId, mapPins, defaultPlaceId]);
+  const selectedItem = useMemo(() => {
+    if (!selectedMapItemId) return null;
+    return (
+      visibleItems.find((i) => i.id === selectedMapItemId) ??
+      mapItems.find((i) => i.id === selectedMapItemId) ??
+      null
+    );
+  }, [selectedMapItemId, visibleItems, mapItems]);
 
   const handleMapItemSelect = (item: MapItem) => {
     setSelectedMapItemId(item.id);
@@ -78,15 +73,18 @@ export function DashboardView({
       <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
         <aside className="order-2 xl:order-1 xl:sticky xl:top-[4.5rem] xl:self-start">
           <FilterPanel
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            categoryFilter={categoryFilter}
+            onCategoryFilterChange={setCategoryFilter}
+            sortMode={sortMode}
+            onSortChange={setSortMode}
           />
         </aside>
 
         <section className="order-1 min-w-0 xl:order-2">
           <DashboardMapPreview
-            mapItems={mapItems}
-            activeFilter={activeFilter}
+            visibleItems={visibleItems}
             selectedMapItemId={selectedMapItemId}
             onMapItemSelect={handleMapItemSelect}
             mapPins={mapPins}
@@ -96,9 +94,7 @@ export function DashboardView({
         </section>
 
         <aside className="order-3 xl:sticky xl:top-[4.5rem] xl:self-start">
-          {selectedPlace ? (
-            <PlaceDetailPanel place={selectedPlace} />
-          ) : null}
+          <MapDetailPanel item={selectedItem} />
         </aside>
       </div>
 
