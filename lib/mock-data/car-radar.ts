@@ -31,6 +31,8 @@ export {
   mockEvents,
   mockCommunities,
   mockCommunityZones,
+  mockClubs,
+  mockClubMembers,
 } from "@/lib/mock-data/seeds";
 
 export const mockSubmissions = mockSubmissionsSeed;

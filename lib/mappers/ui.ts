@@ -237,9 +237,13 @@ export function submissionToAdminSubmission(sub: Submission): AdminSubmission {
       ? "Shop"
       : sub.type === "event"
         ? "Event"
-        : sub.type === "community"
-          ? "Community"
-          : "Correction";
+        : sub.type === "member"
+          ? "Member"
+          : sub.type === "club"
+            ? "Club"
+            : sub.type === "community"
+              ? "Community"
+              : "Correction";
   return {
     id: sub.id,
     type: typeLabel,

@@ -10,7 +10,7 @@ export const brand = {
       { label: "Map", href: "/map" },
       { label: "Events", href: "/events" },
       { label: "Shops", href: "/shops" },
-      { label: "Communities", href: "/communities" },
+      { label: "Clubs", href: "/clubs" },
     ] satisfies NavItem[],
     garage: {
       label: "Garage",

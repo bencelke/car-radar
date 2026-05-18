@@ -17,7 +17,7 @@ export function CommunitiesPanel({ communities }: CommunitiesPanelProps) {
         title="Communities"
         action={
           <Link
-            href="/communities"
+            href="/clubs"
             className="text-[10px] font-medium text-[#3B82F6] hover:underline"
           >
             View all

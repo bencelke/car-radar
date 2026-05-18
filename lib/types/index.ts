@@ -2,6 +2,9 @@ export type {
   BasePlace,
   CarEvent,
   CarShop,
+  Club,
+  ClubMember,
+  ClubMemberStatus,
   Community,
   CommunityZone,
   CreateSubmissionInput,
@@ -30,3 +33,5 @@ export type {
 } from "./ui";
 
 export type { FeatureCard, NavItem } from "./navigation";
+
+export type { MapFilterId, MapItem, MapItemType } from "./map";

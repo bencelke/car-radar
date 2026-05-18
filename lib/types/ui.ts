@@ -90,7 +90,7 @@ export type AdminCity = {
 
 export type AdminSubmission = {
   id: string;
-  type: "Shop" | "Event" | "Community" | "Correction";
+  type: "Shop" | "Event" | "Community" | "Club" | "Member" | "Correction";
   name: string;
   status: "Pending" | "Approved" | "Rejected";
 };

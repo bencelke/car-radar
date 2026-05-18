@@ -74,6 +74,7 @@ export type CarEvent = {
   updatedAt?: string;
 };
 
+/** @deprecated Prefer `Club` for new code; kept for dashboard/repository compatibility */
 export type Community = {
   id: string;
   name: string;
@@ -87,6 +88,62 @@ export type Community = {
   imageUrl?: string;
   memberCount?: number;
   verified: boolean;
+  featured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ClubMemberStatus = "pending" | "approved" | "rejected" | "archived";
+
+export type Club = {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  category?: string;
+  status: ListingStatus;
+  city: string;
+  country: string;
+  area?: string;
+  description: string;
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  website?: string;
+  imageUrl?: string;
+  logoUrl?: string;
+  memberCount?: number;
+  verified: boolean;
+  featured?: boolean;
+  tags?: string[];
+  lat?: number;
+  lng?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ClubMember = {
+  id: string;
+  clubId: string;
+  displayName: string;
+  nickname?: string;
+  status: ClubMemberStatus;
+  city: string;
+  country: string;
+  area?: string;
+  carMake?: string;
+  carModel?: string;
+  carYear?: string;
+  carName?: string;
+  buildSummary?: string;
+  buildTags?: string[];
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  imageUrl?: string;
+  lat?: number;
+  lng?: number;
+  verifiedByClub?: boolean;
   featured?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -112,7 +169,13 @@ export type CommunityZone = {
   updatedAt?: string;
 };
 
-export type SubmissionType = "shop" | "event" | "community" | "correction";
+export type SubmissionType =
+  | "shop"
+  | "event"
+  | "community"
+  | "club"
+  | "member"
+  | "correction";
 
 export type SubmissionStatus = "pending" | "approved" | "rejected";
 
@@ -129,6 +192,12 @@ export type Submission = {
   instagram?: string;
   website?: string;
   submittedByEmail?: string;
+  clubName?: string;
+  carMake?: string;
+  carModel?: string;
+  carYear?: string;
+  buildTags?: string;
+  permissionConfirmed?: boolean;
   createdAt: string;
 };
 
@@ -143,4 +212,10 @@ export type CreateSubmissionInput = {
   instagram?: string;
   website?: string;
   submittedByEmail?: string;
+  clubName?: string;
+  carMake?: string;
+  carModel?: string;
+  carYear?: string;
+  buildTags?: string;
+  permissionConfirmed?: boolean;
 };

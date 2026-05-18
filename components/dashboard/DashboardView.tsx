@@ -12,11 +12,13 @@ import {
 import { CommunitiesPanel } from "@/components/dashboard/CommunitiesPanel";
 import { EventsPanel } from "@/components/dashboard/EventsPanel";
 import { FilterPanel } from "@/components/dashboard/FilterPanel";
-import { MockMapPanel } from "@/components/dashboard/MockMapPanel";
 import { PlaceDetailPanel } from "@/components/dashboard/PlaceDetailPanel";
 import { ShopsPanel } from "@/components/dashboard/ShopsPanel";
 import { SubmitPreviewPanel } from "@/components/dashboard/SubmitPreviewPanel";
+import { DashboardMapPreview } from "@/components/map/DashboardMapPreview";
 import type { DashboardData } from "@/lib/data/dashboard";
+import { resolvePlaceForMapItem } from "@/lib/map/dashboard-place";
+import type { MapItem } from "@/lib/types";
 
 type DashboardViewProps = DashboardData;
 
@@ -27,16 +29,26 @@ export function DashboardView({
   clubAreas,
   places,
   mapPins,
+  mapItems,
   selectedPlaceId: defaultPlaceId,
 }: DashboardViewProps) {
   const [activeFilter, setActiveFilter] = useState("all");
+  const [selectedMapItemId, setSelectedMapItemId] = useState<string | null>(
+    `shop-${defaultPlaceId}`
+  );
   const [selectedPinId, setSelectedPinId] = useState<string | null>(
     defaultPlaceId
   );
 
   const selectedPlace = useMemo(() => {
+    if (selectedMapItemId) {
+      const item = mapItems.find((i) => i.id === selectedMapItemId);
+      if (item) return resolvePlaceForMapItem(item, places);
+    }
+
     const byId = places.find((p) => p.id === selectedPinId);
     if (byId) return byId;
+
     const pin = mapPins.find((p) => p.id === selectedPinId);
     if (pin) {
       return (
@@ -45,8 +57,21 @@ export function DashboardView({
         places[0]
       );
     }
-    return places[0];
-  }, [selectedPinId, places, mapPins, defaultPlaceId]);
+
+    return places.find((p) => p.id === defaultPlaceId) ?? places[0];
+  }, [selectedMapItemId, mapItems, places, selectedPinId, mapPins, defaultPlaceId]);
+
+  const handleMapItemSelect = (item: MapItem) => {
+    setSelectedMapItemId(item.id);
+    if (item.id.startsWith("shop-")) {
+      setSelectedPinId(item.id.replace(/^shop-/, ""));
+    }
+  };
+
+  const handlePinSelect = (id: string) => {
+    setSelectedPinId(id);
+    setSelectedMapItemId(`shop-${id}`);
+  };
 
   return (
     <div className="mx-auto w-full max-w-[1920px] flex-1 px-4 py-4 lg:px-6 lg:py-5">
@@ -59,10 +84,14 @@ export function DashboardView({
         </aside>
 
         <section className="order-1 min-w-0 xl:order-2">
-          <MockMapPanel
-            selectedPinId={selectedPinId}
-            onPinSelect={setSelectedPinId}
+          <DashboardMapPreview
+            mapItems={mapItems}
+            activeFilter={activeFilter}
+            selectedMapItemId={selectedMapItemId}
+            onMapItemSelect={handleMapItemSelect}
             mapPins={mapPins}
+            selectedPinId={selectedPinId}
+            onPinSelect={handlePinSelect}
           />
         </section>
 

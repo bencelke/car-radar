@@ -58,9 +58,65 @@ Documents map to `CarEvent`.
 | `createdAt` | string (ISO) | |
 | `updatedAt` | string (ISO) | |
 
-## `communities`
+## `clubs`
 
-Documents map to `Community`.
+Documents map to `Club`.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `name` | string | |
+| `slug` | string | URL slug, unique |
+| `type` | string | Club focus label |
+| `category` | string? | Filter category |
+| `status` | string | ListingStatus |
+| `city` | string | |
+| `country` | string | |
+| `area` | string? | Region / base area |
+| `description` | string | |
+| `instagram` | string? | |
+| `tiktok` | string? | |
+| `youtube` | string? | |
+| `website` | string? | |
+| `imageUrl` | string? | |
+| `logoUrl` | string? | |
+| `memberCount` | number? | |
+| `verified` | boolean | |
+| `featured` | boolean? | |
+| `tags` | string[]? | |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO) | |
+
+## `club_members`
+
+Documents map to `ClubMember`.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `clubId` | string | FK to `clubs` |
+| `displayName` | string | |
+| `nickname` | string? | |
+| `status` | string | `pending` \| `approved` \| `rejected` \| `archived` |
+| `city` | string | |
+| `country` | string | |
+| `area` | string? | |
+| `carMake` | string? | |
+| `carModel` | string? | |
+| `carYear` | string? | |
+| `carName` | string? | |
+| `buildSummary` | string? | |
+| `buildTags` | string[]? | |
+| `instagram` | string? | |
+| `tiktok` | string? | |
+| `youtube` | string? | |
+| `imageUrl` | string? | |
+| `verifiedByClub` | boolean? | |
+| `featured` | boolean? | |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO) | |
+
+## `communities` (legacy)
+
+Documents map to `Community`. Prefer `clubs` for new data.
 
 | Field | Type | Notes |
 |-------|------|--------|

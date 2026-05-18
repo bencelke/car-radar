@@ -1,4 +1,4 @@
-import type { ListingStatus } from "@/lib/types";
+import type { ClubMemberStatus, ListingStatus } from "@/lib/types";
 
 export function sortFeaturedFirst<T extends { featured?: boolean }>(items: T[]): T[] {
   return [...items].sort(
@@ -7,6 +7,12 @@ export function sortFeaturedFirst<T extends { featured?: boolean }>(items: T[]):
 }
 
 export function filterApproved<T extends { status: ListingStatus }>(items: T[]): T[] {
+  return items.filter((item) => item.status === "approved");
+}
+
+export function filterApprovedMembers<T extends { status: ClubMemberStatus }>(
+  items: T[]
+): T[] {
   return items.filter((item) => item.status === "approved");
 }
 

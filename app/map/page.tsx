@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 
-import { MapView } from "@/app/map/map-view";
+import { MapPageClient } from "@/components/map/MapPageClient";
 import { PageShell } from "@/components/layout/PageShell";
 import { brand } from "@/lib/config/brand";
-import { loadDashboardData } from "@/lib/data/dashboard";
+import { loadMapItems } from "@/lib/data/map-items";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Map",
@@ -11,14 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default async function MapPage() {
-  const { mapPins, selectedPlaceId } = await loadDashboardData();
+  const items = await loadMapItems();
 
   return (
-    <PageShell
-      title="Discovery Map"
-      description="Full-screen map view — Mapbox integration coming later."
-    >
-      <MapView mapPins={mapPins} selectedPlaceId={selectedPlaceId} />
+    <PageShell>
+      <MapPageClient items={items} />
     </PageShell>
   );
 }

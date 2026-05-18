@@ -7,6 +7,7 @@ import {
   shopsToPlaces,
   zoneToClubArea,
 } from "@/lib/mappers/ui";
+import { loadMapItems } from "@/lib/data/map-items";
 import {
   getApprovedCommunityZones,
   getApprovedCommunities,
@@ -17,6 +18,7 @@ import type {
   ClubArea,
   CommunityItem,
   EventItem,
+  MapItem,
   MapPin,
   Place,
   ShopItem,
@@ -29,15 +31,17 @@ export type DashboardData = {
   clubAreas: ClubArea[];
   places: Place[];
   mapPins: MapPin[];
+  mapItems: MapItem[];
   selectedPlaceId: string;
 };
 
 export async function loadDashboardData(): Promise<DashboardData> {
-  const [shops, events, communities, zones] = await Promise.all([
+  const [shops, events, communities, zones, mapItems] = await Promise.all([
     getApprovedShops(),
     getUpcomingEvents(),
     getApprovedCommunities(),
     getApprovedCommunityZones(),
+    loadMapItems(),
   ]);
 
   const selectedPlaceId = "kmc-performance";
@@ -49,6 +53,7 @@ export async function loadDashboardData(): Promise<DashboardData> {
     clubAreas: zones.map(zoneToClubArea),
     places: shopsToPlaces(shops),
     mapPins: buildMapPins(shops, events, communities),
+    mapItems,
     selectedPlaceId,
   };
 }

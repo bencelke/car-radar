@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Rajdhani } from "next/font/google";
 
+import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { TopNav } from "@/components/layout/TopNav";
 import { brand } from "@/lib/config/brand";
 
@@ -36,8 +37,10 @@ export default function RootLayout({
       className={`dark ${inter.variable} ${rajdhani.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-[#05070A] font-sans text-[#F8FAFC] antialiased">
-        <TopNav />
-        <main className="flex flex-1 flex-col">{children}</main>
+        <LocaleProvider>
+          <TopNav />
+          <main className="flex flex-1 flex-col">{children}</main>
+        </LocaleProvider>
       </body>
     </html>
   );

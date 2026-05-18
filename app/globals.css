@@ -147,3 +147,54 @@
     transform: rotate(360deg);
   }
 }
+
+.carradar-map,
+.carradar-map .mapboxgl-map {
+  height: 100%;
+  min-height: 640px;
+  width: 100%;
+}
+
+.carradar-map-shell--dashboard,
+.carradar-map--dashboard {
+  min-height: 420px;
+}
+
+.carradar-map--enhanced .mapboxgl-canvas {
+  filter: contrast(1.08) brightness(1.12) saturate(1.1);
+}
+
+.carradar-map-shell--dashboard .carradar-map--enhanced .mapboxgl-canvas {
+  filter: contrast(1.1) brightness(1.14) saturate(1.12);
+}
+
+.carradar-map .mapboxgl-ctrl-attrib {
+  font-size: 10px;
+  background: rgba(11, 17, 24, 0.85) !important;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.carradar-map .mapboxgl-ctrl-attrib a {
+  color: rgba(96, 165, 250, 0.9);
+}
+
+.carradar-map .mapboxgl-ctrl-group {
+  background: rgba(11, 17, 24, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.45);
+}
+
+.carradar-map .mapboxgl-ctrl-group button {
+  filter: invert(1);
+}
+
+.carradar-marker {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.carradar-marker:hover,
+.carradar-marker.is-selected {
+  transform: scale(1.08);
+  z-index: 10;
+}
