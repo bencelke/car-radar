@@ -9,6 +9,7 @@ import {
 
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { db } from "@/lib/firebase/client";
+import { getPublishedClubs } from "@/lib/mock-data/published-store";
 import { mockClubs } from "@/lib/mock-data/seeds";
 import type { Club } from "@/lib/types";
 import {
@@ -17,8 +18,12 @@ import {
   sortFeaturedFirst,
 } from "@/lib/repositories/utils";
 
+function approvedClubsWithPublished(): Club[] {
+  return filterApproved([...getPublishedClubs(), ...mockClubs]);
+}
+
 async function fetchApprovedFromFirestore(): Promise<Club[]> {
-  if (!db) return filterApproved(mockClubs);
+  if (!db) return approvedClubsWithPublished();
 
   const q = query(
     collection(db, COLLECTIONS.clubs),
@@ -32,11 +37,11 @@ export async function getApprovedClubs(): Promise<Club[]> {
   try {
     const clubs = await fetchApprovedFromFirestore();
     return sortFeaturedFirst(
-      clubs.length > 0 ? clubs : filterApproved(mockClubs)
+      clubs.length > 0 ? clubs : approvedClubsWithPublished()
     );
   } catch (error) {
     logRepositoryFallback(COLLECTIONS.clubs, error);
-    return sortFeaturedFirst(filterApproved(mockClubs));
+    return sortFeaturedFirst(approvedClubsWithPublished());
   }
 }
 
@@ -46,7 +51,7 @@ export async function getFeaturedClubs(): Promise<Club[]> {
 }
 
 export async function getClubById(id: string): Promise<Club | null> {
-  const fromMock = mockClubs.find((c) => c.id === id && c.status === "approved");
+  const fromMock = approvedClubsWithPublished().find((c) => c.id === id);
   if (!db) return fromMock ?? null;
 
   try {
@@ -61,9 +66,7 @@ export async function getClubById(id: string): Promise<Club | null> {
 }
 
 export async function getClubBySlug(slug: string): Promise<Club | null> {
-  const fromMock = mockClubs.find(
-    (c) => c.slug === slug && c.status === "approved"
-  );
+  const fromMock = approvedClubsWithPublished().find((c) => c.slug === slug);
   if (!db) return fromMock ?? null;
 
   try {

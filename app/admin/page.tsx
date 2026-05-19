@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { brand } from "@/lib/config/brand";
-import { submissionToAdminSubmission } from "@/lib/mappers/ui";
-import { getPendingSubmissions } from "@/lib/repositories/submissions";
+import { getSubmissionsByStatus } from "@/lib/repositories/submissions";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -11,9 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
-  const submissions = (await getPendingSubmissions()).map(
-    submissionToAdminSubmission
-  );
+  const submissions = await getSubmissionsByStatus("all");
 
-  return <AdminDashboard submissions={submissions} />;
+  return <AdminDashboard initialSubmissions={submissions} />;
 }

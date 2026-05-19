@@ -92,7 +92,7 @@ export type AdminSubmission = {
   id: string;
   type: "Shop" | "Event" | "Community" | "Club" | "Member" | "Correction";
   name: string;
-  status: "Pending" | "Approved" | "Rejected";
+  status: "Pending" | "Approved" | "Rejected" | "Needs Changes";
 };
 
 export type MonetizationTier = {

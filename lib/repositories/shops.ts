@@ -9,6 +9,7 @@ import {
 
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { db } from "@/lib/firebase/client";
+import { getPublishedShops } from "@/lib/mock-data/published-store";
 import { mockShops } from "@/lib/mock-data/seeds";
 import type { CarShop } from "@/lib/types";
 import {
@@ -17,8 +18,12 @@ import {
   sortFeaturedFirst,
 } from "@/lib/repositories/utils";
 
+function approvedShopsWithPublished(): CarShop[] {
+  return filterApproved([...getPublishedShops(), ...mockShops]);
+}
+
 async function fetchApprovedFromFirestore(): Promise<CarShop[]> {
-  if (!db) return filterApproved(mockShops);
+  if (!db) return approvedShopsWithPublished();
 
   const q = query(
     collection(db, COLLECTIONS.carShops),
@@ -33,10 +38,12 @@ async function fetchApprovedFromFirestore(): Promise<CarShop[]> {
 export async function getApprovedShops(): Promise<CarShop[]> {
   try {
     const shops = await fetchApprovedFromFirestore();
-    return sortFeaturedFirst(shops.length > 0 ? shops : filterApproved(mockShops));
+    return sortFeaturedFirst(
+      shops.length > 0 ? shops : approvedShopsWithPublished()
+    );
   } catch (error) {
     logRepositoryFallback(COLLECTIONS.carShops, error);
-    return sortFeaturedFirst(filterApproved(mockShops));
+    return sortFeaturedFirst(approvedShopsWithPublished());
   }
 }
 
@@ -46,7 +53,7 @@ export async function getFeaturedShops(): Promise<CarShop[]> {
 }
 
 export async function getShopById(id: string): Promise<CarShop | null> {
-  const fromMock = mockShops.find((s) => s.id === id && s.status === "approved");
+  const fromMock = approvedShopsWithPublished().find((s) => s.id === id);
   if (!db) return fromMock ?? null;
 
   try {

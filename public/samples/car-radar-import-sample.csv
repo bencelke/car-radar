@@ -1,0 +1,9 @@
+name,type,category,country,city,area,address,lat,lng,instagram,tiktok,youtube,website,description,tags,source_url,status
+KMC Performance,shop,turbo,Germany,Kaiserslautern,KMC,Industriestraße 12,49.443,7.769,@kmcperformance,,,https://example.com/kmc,"Performance upgrades, turbo builds, ECU tuning.",turbo;tuning,https://example.com/source,approved
+Royal Wraps,shop,wrap_tint,Germany,Ramstein,KMC,,49.437,7.602,@royalwraps,,,,"Premium wrap and tint studio near Ramstein.",wrap;tint,,pending
+Cars & Coffee Kaiserslautern,event,Meet,Germany,Kaiserslautern,KMC,Stiftsplatz,49.444,7.768,@carsandcoffee_kl,,,,"Monthly cars and coffee meet in downtown Kaiserslautern.",meet;coffee,https://instagram.com/carsandcoffee_kl,pending
+Nürburgring Weekend Run,event,Cruise,Germany,Adenau,Eifel,,50.335,6.947,@nringweekend,,,,"Weekend cruise and track day group.",cruise;track,,pending
+Bavarian Crew,club,BMW,Germany,Kaiserslautern,KMC,,49.441,7.755,@bavariancrew,,,https://example.com/bavarian,"BMW-focused club around Kaiserslautern and KMC.",bmw;euro,,pending
+JDM Kaiserslautern,club,JDM,Germany,Kaiserslautern,KMC,,49.439,7.748,@jdmkl,,,,"JDM meets and build culture in the KMC area.",jdm;meet,,pending
+Alex / BMW M340i,member,Build,Germany,Kaiserslautern,KMC,,49.44,7.75,@alexm340i,,,,"Stage 2 B58 build with exhaust and intake.",b58;exhaust,Bavarian Crew,pending
+Ken / Toyota Supra MK5,member,Build,Germany,Ramstein,KMC,,49.436,7.6,@kensupra,,,,"MK5 Supra with downpipe and tune.",supra;tune,JDM Kaiserslautern,pending

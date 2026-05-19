@@ -9,6 +9,7 @@ import {
 
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { db } from "@/lib/firebase/client";
+import { getPublishedEvents } from "@/lib/mock-data/published-store";
 import { mockEvents } from "@/lib/mock-data/seeds";
 import type { CarEvent } from "@/lib/types";
 import {
@@ -17,8 +18,12 @@ import {
   sortFeaturedFirst,
 } from "@/lib/repositories/utils";
 
+function approvedEventsWithPublished(): CarEvent[] {
+  return filterApproved([...getPublishedEvents(), ...mockEvents]);
+}
+
 async function fetchApprovedFromFirestore(): Promise<CarEvent[]> {
-  if (!db) return filterApproved(mockEvents);
+  if (!db) return approvedEventsWithPublished();
 
   const q = query(
     collection(db, COLLECTIONS.carEvents),
@@ -34,11 +39,11 @@ export async function getApprovedEvents(): Promise<CarEvent[]> {
   try {
     const events = await fetchApprovedFromFirestore();
     return sortFeaturedFirst(
-      events.length > 0 ? events : filterApproved(mockEvents)
+      events.length > 0 ? events : approvedEventsWithPublished()
     );
   } catch (error) {
     logRepositoryFallback(COLLECTIONS.carEvents, error);
-    return sortFeaturedFirst(filterApproved(mockEvents));
+    return sortFeaturedFirst(approvedEventsWithPublished());
   }
 }
 
@@ -54,7 +59,7 @@ export async function getUpcomingEvents(): Promise<CarEvent[]> {
 }
 
 export async function getEventById(id: string): Promise<CarEvent | null> {
-  const fromMock = mockEvents.find((e) => e.id === id && e.status === "approved");
+  const fromMock = approvedEventsWithPublished().find((e) => e.id === id);
   if (!db) return fromMock ?? null;
 
   try {

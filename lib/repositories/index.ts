@@ -29,5 +29,19 @@ export {
   approveSubmission,
   createSubmission,
   getPendingSubmissions,
+  getSubmissionById,
+  getSubmissionsByStatus,
+  markSubmissionNeedsChanges,
+  publishApprovedSubmission,
   rejectSubmission,
+  updateSubmissionStatus,
 } from "./submissions";
+export type { PublishResult } from "./submissions";
+export type { PublishDraft, PublishDraftValidation } from "./publish-draft";
+export {
+  createPublishDraftFromSubmission,
+  validatePublishDraft,
+  mapPublishDraftToPublicEntity,
+} from "./publish-draft";
+export type { PotentialDuplicate } from "./duplicate-detection";
+export { findPotentialDuplicatesForSubmission } from "./duplicate-detection";

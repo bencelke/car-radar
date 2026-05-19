@@ -160,24 +160,138 @@ Documents map to `CommunityZone` (club areas on map).
 
 ## `submissions`
 
-User-submitted content awaiting review. Maps to `Submission`.
+User-submitted content awaiting review. Maps to `Submission` in `lib/types/domain.ts`. Documents are **never auto-published**; new rows are created with `status: "pending"`. Day 7+ admin workflow will approve/reject and publish to listing collections.
+
+### Types
+
+| `type` | Purpose |
+|--------|---------|
+| `shop` | New tuning / mod / wrap / detail shop |
+| `event` | Meet, cruise, show, festival |
+| `club` | Car club or crew |
+| `member` | Club member / build profile |
+| `correction` | Fix wrong data on an existing listing |
+| `community` | Legacy type in types only; prefer `club` |
+
+### Base fields (all types)
 
 | Field | Type | Notes |
 |-------|------|--------|
-| `type` | string | `shop` \| `event` \| `community` \| `correction` |
-| `status` | string | `pending` \| `approved` \| `rejected` |
-| `name` | string | |
-| `category` | string? | |
-| `city` | string | |
+| `type` | string | See types above |
+| `status` | string | `pending` \| `approved` \| `rejected` \| `needs_changes` — always `pending` on create |
+| `name` | string | Display name (for corrections, same as `targetName`) |
+| `category` | string? | Aligns with CSV `category` |
 | `country` | string? | |
-| `location` | string? | Free-form location line |
-| `description` | string | |
-| `instagram` | string? | |
+| `city` | string | Required |
+| `area` | string? | Region / district |
+| `address` | string? | Street line |
+| `lat` | number? | Optional, no geocoding yet |
+| `lng` | number? | Optional |
+| `instagram` | string? | Normalized to `https://` in repository |
+| `tiktok` | string? | |
+| `youtube` | string? | |
 | `website` | string? | |
-| `submittedByEmail` | string? | When auth exists |
-| `createdAt` | string (ISO) | |
+| `sourceUrl` | string? | Original listing / post URL |
+| `description` | string | Required (build summary for members) |
+| `tags` | string[]? | Lowercase, comma-split on ingest |
+| `submittedByEmail` | string? | Optional; from form or auth later |
+| `submittedByUid` | string? | When Firebase Auth is wired |
+| `permissionConfirmed` | boolean? | Required for `member` submissions |
+| `createdAt` | string (ISO) | Set on create |
+| `updatedAt` | string (ISO)? | Set on create and status changes |
+| `reviewedAt` | string (ISO)? | Set when status changes in admin review |
+| `reviewedBy` | string? | Moderator uid (when Auth is added) |
+| `reviewNote` | string? | Required for `rejected` and `needs_changes` |
+| `approvedEntityId` | string? | Target listing doc id after Day 8 publish |
 
-On approve: create/update target collection doc and set submission `status` to `approved`.
+### Type-specific fields
+
+**`shop`:** `services` (string[]), `brandsSupported` (string[])
+
+**`event`:** `startTime`, `endTime` (ISO strings), `organizerName`, `organizerInstagram`
+
+**`club`:** `clubType`, `memberCountEstimate` (number)
+
+**`member`:** `clubName`, `carMake`, `carModel`, `carYear`, `carName`, `buildSummary`, `buildTags` (string[])
+
+**`correction`:** `targetType` (`shop` \| `event` \| `club` \| `member` \| `zone` \| `other`), `targetName`, `correctionDetails` (also stored in `name` / `description`)
+
+### CSV import alignment
+
+Future bulk import columns: `name`, `type`, `category`, `country`, `city`, `area`, `address`, `lat`, `lng`, `instagram`, `tiktok`, `youtube`, `website`, `description`, `tags`, `source_url`, `status`.
+
+### Review statuses
+
+| Status | Meaning |
+|--------|---------|
+| `pending` | Awaiting moderator review (default on create) |
+| `approved` | Accepted; published to public collection when type is shop/event/club/member |
+| `rejected` | Declined with `reviewNote` |
+| `needs_changes` | Sent back to submitter context with `reviewNote` |
+
+Legacy documents without `needs_changes` remain valid; treat unknown statuses as `pending` in UI if needed.
+
+### Workflow (Day 7–9)
+
+1. User submits via `/submit` → `createSubmission()` → `addDoc` to `submissions` with `status: "pending"` (or mock store if Firebase env is missing).
+2. Moderators open `/admin` → filter by status → review submission.
+3. For publishable types, moderators may edit a **publish draft** (name, location, links, tags, event/member fields) before approval.
+4. **Duplicate warning** (heuristic, non-blocking): compares draft/submission against approved listings (seed + session-published + Firestore when configured). Same name+city, matching website/Instagram, or event name+date triggers a warning — approval is still allowed.
+5. On **Approve** for `shop`, `event`, `club`, `member` (legacy `community` → club): `publishApprovedSubmission()` uses the edited draft when provided, writes the public listing, and sets `approvedEntityId`, `publishedCollection`, `reviewedAt`.
+6. On **Approve** for `correction`: status-only (no public entity). **Day 10 TODO:** apply correction to target listing.
+7. Reject / needs changes never publish.
+
+### Publish draft (Day 9)
+
+In-memory shape used in `/admin` (not stored as its own Firestore collection):
+
+| Field | Notes |
+|-------|--------|
+| `name`, `description`, `city`, `country` | Required for publish validation |
+| `address`, `lat`, `lng` | Optional; missing coords show a non-blocking map warning |
+| `websiteUrl`, `instagramUrl`, `tags` | Comma-separated tags in UI |
+| `startTime`, `endTime` | Events |
+| `clubName`, `carMake`, `carModel`, `carYear`, `buildSummary` | Members |
+
+Helpers: `createPublishDraftFromSubmission`, `validatePublishDraft`, `mapPublishDraftToPublicEntity`.
+
+### Published listing collections (Day 8)
+
+Logical names map to Firestore collections used by repositories:
+
+| `publishedCollection` | Firestore collection | Domain type |
+|----------------------|----------------------|-------------|
+| `shops` | `car_shops` | `CarShop` |
+| `events` | `car_events` | `CarEvent` |
+| `clubs` | `clubs` | `Club` |
+| `members` | `club_members` | `ClubMember` |
+
+Published entities include `status: "approved"`, timestamps, and optional `sourceSubmissionId` linking back to the submission.
+
+### CSV import (Day 10)
+
+Admin-only bulk import at `/admin` → **CSV import** tab. Rows are parsed with PapaParse and created via `createSubmission()` — always `status: pending`, even if the CSV column says `approved`.
+
+| CSV column | Maps to |
+|------------|---------|
+| `name`, `type`, `city`, `description` | Required |
+| `category`, `country`, `area`, `address`, `lat`, `lng` | Optional |
+| `instagram`, `tiktok`, `youtube`, `website`, `source_url` | Optional links |
+| `tags` | Comma or semicolon → lowercase `tags[]` |
+| `status` | Ignored (warning only) |
+
+Optional submission fields: `importSource: "csv"`, `importedAt` (ISO).
+
+Sample file: `/public/samples/car-radar-import-sample.csv`
+
+**Production:** restrict `/admin` and CSV import to moderators only (auth not implemented yet).
+
+### Day 11+ TODO
+
+- Apply approved **correction** submissions to target listings
+- Stronger duplicate detection (fuzzy merge, block-on-duplicate option)
+- Optional alias collections (`shops` vs `car_shops`) cleanup if consolidating naming
+- Persist publish drafts on submission for multi-session admin review
 
 ## `users` (future)
 

@@ -253,7 +253,9 @@ export function submissionToAdminSubmission(sub: Submission): AdminSubmission {
         ? "Pending"
         : sub.status === "approved"
           ? "Approved"
-          : "Rejected",
+          : sub.status === "needs_changes"
+            ? "Needs Changes"
+            : "Rejected",
   };
 }
 

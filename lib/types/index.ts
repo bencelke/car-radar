@@ -7,6 +7,7 @@ export type {
   ClubMemberStatus,
   Community,
   CommunityZone,
+  CorrectionTargetType,
   CreateSubmissionInput,
   ListingStatus,
   PlaceCategory,

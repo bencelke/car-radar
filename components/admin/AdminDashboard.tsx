@@ -1,14 +1,19 @@
+import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { GlassPanel, PanelHeader } from "@/components/dashboard/glass-panel";
 import { accentStyles } from "@/lib/config/accents";
 import { adminCities, adminStats } from "@/lib/mock-data/car-radar";
-import type { AdminSubmission } from "@/lib/types";
+import type { Submission } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type AdminDashboardProps = {
-  submissions: AdminSubmission[];
+  initialSubmissions: Submission[];
 };
 
-export function AdminDashboard({ submissions }: AdminDashboardProps) {
+export function AdminDashboard({ initialSubmissions }: AdminDashboardProps) {
+  const pendingCount = initialSubmissions.filter(
+    (s) => s.status === "pending"
+  ).length;
+
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)]">
       <aside className="hidden w-56 shrink-0 border-r border-white/[0.06] bg-[#0B1118]/80 p-4 lg:block">
@@ -16,19 +21,24 @@ export function AdminDashboard({ submissions }: AdminDashboardProps) {
           Admin
         </p>
         <nav className="mt-4 space-y-1">
-          {["Overview", "Users", "Places", "Events", "Submissions", "Settings"].map(
+          {["Overview", "Submissions", "Users", "Places", "Events", "Settings"].map(
             (item, i) => (
               <button
                 key={item}
                 type="button"
                 className={cn(
                   "flex w-full rounded-lg px-3 py-2 text-left text-sm transition",
-                  i === 0
+                  i <= 1
                     ? "bg-[#EF4444]/15 font-medium text-[#F8FAFC]"
                     : "text-[#64748B] hover:bg-[#151B24] hover:text-[#CBD5E1]"
                 )}
               >
                 {item}
+                {item === "Submissions" && pendingCount > 0 ? (
+                  <span className="ml-auto rounded-full bg-[#F97316]/20 px-1.5 text-[10px] text-[#F97316]">
+                    {pendingCount}
+                  </span>
+                ) : null}
               </button>
             )
           )}
@@ -41,7 +51,7 @@ export function AdminDashboard({ submissions }: AdminDashboardProps) {
             Admin Overview
           </h1>
           <p className="mt-1 text-sm text-[#64748B]">
-            Platform metrics and moderation queue
+            Platform metrics and submission moderation
           </p>
         </div>
 
@@ -82,7 +92,7 @@ export function AdminDashboard({ submissions }: AdminDashboardProps) {
           </GlassPanel>
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4">
           <GlassPanel>
             <PanelHeader title="Top Cities" />
             <ul className="space-y-3 p-4 pt-0">
@@ -102,29 +112,12 @@ export function AdminDashboard({ submissions }: AdminDashboardProps) {
               ))}
             </ul>
           </GlassPanel>
-
-          <GlassPanel>
-            <PanelHeader title="Recent Submissions" />
-            <ul className="divide-y divide-white/[0.05]">
-              {submissions.map((sub) => (
-                <li
-                  key={sub.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
-                >
-                  <div>
-                    <p className="text-xs font-medium text-[#F8FAFC]">
-                      New {sub.type} — {sub.name}
-                    </p>
-                    <p className="text-[10px] text-[#64748B]">{sub.status}</p>
-                  </div>
-                  <span className="rounded-full border border-[#F97316]/40 bg-[#F97316]/15 px-2 py-0.5 text-[10px] font-semibold text-[#F97316]">
-                    {sub.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </GlassPanel>
         </div>
+
+        <AdminWorkspace
+          initialSubmissions={initialSubmissions}
+          pendingCount={pendingCount}
+        />
       </div>
     </div>
   );

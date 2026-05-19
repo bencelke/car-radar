@@ -9,6 +9,7 @@ import {
 
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { db } from "@/lib/firebase/client";
+import { getPublishedMembers } from "@/lib/mock-data/published-store";
 import { mockClubMembers } from "@/lib/mock-data/seeds";
 import type { ClubMember } from "@/lib/types";
 import {
@@ -17,8 +18,12 @@ import {
   sortFeaturedFirst,
 } from "@/lib/repositories/utils";
 
+function approvedMembersWithPublished(): ClubMember[] {
+  return filterApprovedMembers([...getPublishedMembers(), ...mockClubMembers]);
+}
+
 async function fetchApprovedFromFirestore(): Promise<ClubMember[]> {
-  if (!db) return filterApprovedMembers(mockClubMembers);
+  if (!db) return approvedMembersWithPublished();
 
   const q = query(
     collection(db, COLLECTIONS.clubMembers),
@@ -34,17 +39,17 @@ export async function getApprovedClubMembers(): Promise<ClubMember[]> {
   try {
     const members = await fetchApprovedFromFirestore();
     return sortFeaturedFirst(
-      members.length > 0 ? members : filterApprovedMembers(mockClubMembers)
+      members.length > 0 ? members : approvedMembersWithPublished()
     );
   } catch (error) {
     logRepositoryFallback(COLLECTIONS.clubMembers, error);
-    return sortFeaturedFirst(filterApprovedMembers(mockClubMembers));
+    return sortFeaturedFirst(approvedMembersWithPublished());
   }
 }
 
 export async function getMembersByClubId(clubId: string): Promise<ClubMember[]> {
   const fromMock = filterApprovedMembers(
-    mockClubMembers.filter((m) => m.clubId === clubId)
+    approvedMembersWithPublished().filter((m) => m.clubId === clubId)
   );
   if (!db) return sortFeaturedFirst(fromMock);
 
@@ -71,9 +76,7 @@ export async function getFeaturedMembers(): Promise<ClubMember[]> {
 }
 
 export async function getClubMemberById(id: string): Promise<ClubMember | null> {
-  const fromMock = mockClubMembers.find(
-    (m) => m.id === id && m.status === "approved"
-  );
+  const fromMock = approvedMembersWithPublished().find((m) => m.id === id);
   if (!db) return fromMock ?? null;
 
   try {

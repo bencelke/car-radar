@@ -40,6 +40,7 @@ export type BasePlace = {
   featured?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  sourceSubmissionId?: string;
 };
 
 export type CarShop = BasePlace & {
@@ -72,6 +73,7 @@ export type CarEvent = {
   interestedCount?: number;
   createdAt?: string;
   updatedAt?: string;
+  sourceSubmissionId?: string;
 };
 
 /** @deprecated Prefer `Club` for new code; kept for dashboard/repository compatibility */
@@ -91,6 +93,7 @@ export type Community = {
   featured?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  sourceSubmissionId?: string;
 };
 
 export type ClubMemberStatus = "pending" | "approved" | "rejected" | "archived";
@@ -120,6 +123,7 @@ export type Club = {
   lng?: number;
   createdAt?: string;
   updatedAt?: string;
+  sourceSubmissionId?: string;
 };
 
 export type ClubMember = {
@@ -147,6 +151,7 @@ export type ClubMember = {
   featured?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  sourceSubmissionId?: string;
 };
 
 export type CommunityZone = {
@@ -177,7 +182,19 @@ export type SubmissionType =
   | "member"
   | "correction";
 
-export type SubmissionStatus = "pending" | "approved" | "rejected";
+export type SubmissionStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "needs_changes";
+
+export type CorrectionTargetType =
+  | "shop"
+  | "event"
+  | "club"
+  | "member"
+  | "zone"
+  | "other";
 
 export type Submission = {
   id: string;
@@ -185,37 +202,56 @@ export type Submission = {
   status: SubmissionStatus;
   name: string;
   category?: string;
-  city: string;
   country?: string;
+  city: string;
+  area?: string;
+  address?: string;
+  /** @deprecated Use `address` */
   location?: string;
-  description: string;
+  lat?: number;
+  lng?: number;
   instagram?: string;
+  tiktok?: string;
+  youtube?: string;
   website?: string;
+  sourceUrl?: string;
+  description: string;
+  tags?: string[];
   submittedByEmail?: string;
-  clubName?: string;
-  carMake?: string;
-  carModel?: string;
-  carYear?: string;
-  buildTags?: string;
+  submittedByUid?: string;
   permissionConfirmed?: boolean;
   createdAt: string;
-};
-
-export type CreateSubmissionInput = {
-  type: SubmissionType;
-  name: string;
-  category?: string;
-  city: string;
-  country?: string;
-  location?: string;
-  description: string;
-  instagram?: string;
-  website?: string;
-  submittedByEmail?: string;
+  updatedAt?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNote?: string;
+  /** Set when submission is published to a listing collection */
+  approvedEntityId?: string;
+  /** Short collection slug: shops | events | clubs | members */
+  publishedCollection?: string;
+  services?: string[];
+  brandsSupported?: string[];
+  startTime?: string;
+  endTime?: string;
+  organizerName?: string;
+  organizerInstagram?: string;
+  clubType?: string;
+  memberCountEstimate?: number;
   clubName?: string;
   carMake?: string;
   carModel?: string;
   carYear?: string;
-  buildTags?: string;
-  permissionConfirmed?: boolean;
+  carName?: string;
+  buildSummary?: string;
+  buildTags?: string[];
+  targetType?: CorrectionTargetType;
+  targetName?: string;
+  correctionDetails?: string;
+  importSource?: string;
+  importedAt?: string;
 };
+
+export type CreateSubmissionInput = Omit<
+  Submission,
+  "id" | "status" | "createdAt" | "updatedAt"
+>;
