@@ -102,6 +102,14 @@ export type Community = {
 
 export type ClubMemberStatus = "pending" | "approved" | "rejected" | "archived";
 
+export type MemberRole =
+  | "member"
+  | "club_owner"
+  | "club_admin"
+  | "founder"
+  | "road_captain"
+  | "photographer";
+
 export type Club = {
   id: string;
   name: string;
@@ -133,12 +141,15 @@ export type Club = {
 export type ClubMember = {
   id: string;
   clubId: string;
+  clubName?: string;
   displayName: string;
   nickname?: string;
   status: ClubMemberStatus;
   city: string;
   country: string;
   area?: string;
+  lat?: number;
+  lng?: number;
   carMake?: string;
   carModel?: string;
   carYear?: string;
@@ -149,8 +160,9 @@ export type ClubMember = {
   tiktok?: string;
   youtube?: string;
   imageUrl?: string;
-  lat?: number;
-  lng?: number;
+  avatarUrl?: string;
+  role?: MemberRole;
+  roleLabel?: string;
   verifiedByClub?: boolean;
   featured?: boolean;
   createdAt?: string;

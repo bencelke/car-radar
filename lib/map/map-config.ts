@@ -18,6 +18,90 @@ export const FLY_TO_ZOOM = 13;
 
 export const DASHBOARD_FLY_TO_ZOOM = 12;
 
+export type MapVariant = "full" | "dashboard";
+
+/** Resolved Mapbox gesture options for CarRadarMap. */
+export type MapInteractionOptions = {
+  scrollZoom: boolean;
+  cooperativeGestures: boolean;
+  doubleClickZoom: boolean;
+  dragPan: boolean;
+  touchZoomRotate: boolean;
+  boxZoom: boolean;
+  keyboard: boolean;
+  dragRotate: boolean;
+};
+
+const VARIANT_INTERACTION_DEFAULTS: Record<MapVariant, MapInteractionOptions> = {
+  full: {
+    scrollZoom: true,
+    cooperativeGestures: false,
+    doubleClickZoom: true,
+    dragPan: true,
+    touchZoomRotate: true,
+    boxZoom: true,
+    keyboard: true,
+    dragRotate: true,
+  },
+  dashboard: {
+    scrollZoom: true,
+    cooperativeGestures: false,
+    doubleClickZoom: true,
+    dragPan: true,
+    touchZoomRotate: true,
+    boxZoom: true,
+    keyboard: false,
+    dragRotate: false,
+  },
+};
+
+const DISABLED_INTERACTIONS: MapInteractionOptions = {
+  scrollZoom: false,
+  cooperativeGestures: false,
+  doubleClickZoom: false,
+  dragPan: false,
+  touchZoomRotate: false,
+  boxZoom: false,
+  keyboard: false,
+  dragRotate: false,
+};
+
+export type MapInteractionOverrides = Partial<
+  Pick<
+    MapInteractionOptions,
+    | "scrollZoom"
+    | "cooperativeGestures"
+    | "doubleClickZoom"
+    | "dragPan"
+    | "touchZoomRotate"
+  >
+>;
+
+/**
+ * Merge variant defaults with optional overrides.
+ * Set `cooperativeGestures: true` on dashboard (and `scrollZoom: true`) for Ctrl/Cmd + scroll zoom.
+ */
+export function resolveMapInteractions(
+  variant: MapVariant,
+  enableInteraction: boolean,
+  overrides?: MapInteractionOverrides
+): MapInteractionOptions {
+  if (!enableInteraction) return { ...DISABLED_INTERACTIONS };
+  const base = { ...VARIANT_INTERACTION_DEFAULTS[variant] };
+  if (overrides?.scrollZoom !== undefined) base.scrollZoom = overrides.scrollZoom;
+  if (overrides?.cooperativeGestures !== undefined) {
+    base.cooperativeGestures = overrides.cooperativeGestures;
+  }
+  if (overrides?.doubleClickZoom !== undefined) {
+    base.doubleClickZoom = overrides.doubleClickZoom;
+  }
+  if (overrides?.dragPan !== undefined) base.dragPan = overrides.dragPan;
+  if (overrides?.touchZoomRotate !== undefined) {
+    base.touchZoomRotate = overrides.touchZoomRotate;
+  }
+  return base;
+}
+
 export type MapErrorCategory =
   | "missing-token"
   | "init-failed"

@@ -4,6 +4,7 @@ import { ExternalLink, MapPin, Share2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 import { GlassPanel } from "@/components/dashboard/glass-panel";
+import { MapMemberDetail } from "@/components/map/MapMemberDetail";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import {
   googleMapsDirectionsUrl,
@@ -75,9 +76,32 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
     );
   }
 
+  if (item.type === "member") {
+    return (
+      <GlassPanel
+        className={cn(
+          "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5 lg:w-80 lg:shrink-0",
+          className
+        )}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
+            {typeLabel(item, t)}
+          </span>
+          {item.verified ? (
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400">
+              <ShieldCheck className="size-3" />
+              {t.map.verified}
+            </span>
+          ) : null}
+        </div>
+        <MapMemberDetail item={item} />
+      </GlassPanel>
+    );
+  }
+
   const detailHref = mapItemDetailPath(item);
 
-  const clubName = metaString(item, "clubName");
   const buildTags = metaString(item, "buildTags");
   const services = metaString(item, "services");
   const rating = metaNumber(item, "rating");
@@ -86,9 +110,6 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
   const organizer = metaString(item, "organizerName");
   const startTime = formatEventTime(metaString(item, "startTime"));
   const statusLabel = metaString(item, "statusLabel");
-  const carLine = [metaString(item, "carYear"), metaString(item, "carMake"), metaString(item, "carModel")]
-    .filter(Boolean)
-    .join(" ");
 
   return (
     <GlassPanel
@@ -115,18 +136,10 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
         <h2 className="font-heading mt-2 text-lg font-semibold text-white">
           {item.title}
         </h2>
-        {item.type === "member" && carLine ? (
-          <p className="mt-0.5 text-xs text-blue-200/80">{carLine}</p>
-        ) : null}
         <p className="mt-1 text-xs text-white/50">
           {item.category}
           {item.area ? ` · ${item.area}` : ""} · {item.city}, {item.country}
         </p>
-        {clubName && item.type === "member" ? (
-          <p className="mt-1 text-xs text-white/40">
-            {t.map.clubLabel}: {clubName}
-          </p>
-        ) : null}
       </div>
 
       {item.description ? (

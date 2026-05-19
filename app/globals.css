@@ -188,6 +188,14 @@
   filter: invert(1);
 }
 
+.carradar-map--interactive .mapboxgl-canvas {
+  cursor: grab;
+}
+
+.carradar-map--grabbing .mapboxgl-canvas {
+  cursor: grabbing !important;
+}
+
 .carradar-marker {
   cursor: pointer;
   transition: transform 0.15s ease;

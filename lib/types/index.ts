@@ -5,6 +5,7 @@ export type {
   Club,
   ClubMember,
   ClubMemberStatus,
+  MemberRole,
   Community,
   CommunityZone,
   CorrectionTargetType,

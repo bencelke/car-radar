@@ -76,14 +76,16 @@ export async function getFeaturedMembers(): Promise<ClubMember[]> {
 }
 
 export async function getClubMemberById(id: string): Promise<ClubMember | null> {
-  const fromMock = approvedMembersWithPublished().find((m) => m.id === id);
+  const approved = approvedMembersWithPublished();
+  const fromMock = approved.find((m) => m.id === id);
   if (!db) return fromMock ?? null;
 
   try {
     const snap = await getDoc(doc(db, COLLECTIONS.clubMembers, id));
     if (!snap.exists()) return fromMock ?? null;
     const member = { id: snap.id, ...snap.data() } as ClubMember;
-    return member.status === "approved" ? member : null;
+    if (member.status !== "approved") return null;
+    return member;
   } catch (error) {
     logRepositoryFallback(COLLECTIONS.clubMembers, error);
     return fromMock ?? null;

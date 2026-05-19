@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import { MapControls } from "@/components/map/MapControls";
+import { MemberMapHoverPreview } from "@/components/map/MemberMapHoverPreview";
 import { createMapMarkerElement } from "@/components/map/MapMarker";
 import {
   classifyMapboxError,
@@ -15,8 +16,11 @@ import {
   FLY_TO_ZOOM,
   logMapboxTokenDiagnostic,
   MAPBOX_STYLE,
+  resolveMapInteractions,
   type MapErrorCategory,
+  type MapInteractionOverrides,
 } from "@/lib/map/map-config";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { MARKER_STYLES } from "@/lib/map/map-utils";
 import type { MapFilterId, MapItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -42,6 +46,12 @@ type CarRadarMapProps = {
   fullMapHref?: string;
   showLegend?: boolean;
   enableInteraction?: boolean;
+  /** Wheel / trackpad zoom (default: true for full and dashboard). */
+  enableScrollZoom?: boolean;
+  /** When true, zoom requires Ctrl/Cmd + scroll (smoother page scroll on dashboard). */
+  cooperativeGestures?: boolean;
+  enableDoubleClickZoom?: boolean;
+  enableDragPan?: boolean;
   initialFilter?: MapFilterId;
   enhanceMarkers?: boolean;
 };
@@ -76,6 +86,57 @@ function scheduleResize(map: import("mapbox-gl").Map, delay = 100) {
   }, delay);
 }
 
+function applyMapInteractions(
+  map: import("mapbox-gl").Map,
+  interactions: ReturnType<typeof resolveMapInteractions>
+) {
+  if (interactions.scrollZoom) map.scrollZoom.enable();
+  else map.scrollZoom.disable();
+
+  if (interactions.doubleClickZoom) map.doubleClickZoom.enable();
+  else map.doubleClickZoom.disable();
+
+  if (interactions.dragPan) map.dragPan.enable();
+  else map.dragPan.disable();
+
+  if (interactions.touchZoomRotate) map.touchZoomRotate.enable();
+  else map.touchZoomRotate.disable();
+
+  if (interactions.boxZoom) map.boxZoom.enable();
+  else map.boxZoom.disable();
+
+  if (interactions.keyboard) map.keyboard.enable();
+  else map.keyboard.disable();
+
+  if (interactions.dragRotate) map.dragRotate.enable();
+  else map.dragRotate.disable();
+}
+
+function bindMapCursor(
+  map: import("mapbox-gl").Map,
+  container: HTMLDivElement,
+  dragPanEnabled: boolean
+): () => void {
+  if (!dragPanEnabled) {
+    container.classList.remove("carradar-map--interactive", "carradar-map--grabbing");
+    return () => {};
+  }
+
+  container.classList.add("carradar-map--interactive");
+
+  const onDragStart = () => container.classList.add("carradar-map--grabbing");
+  const onDragEnd = () => container.classList.remove("carradar-map--grabbing");
+
+  map.on("dragstart", onDragStart);
+  map.on("dragend", onDragEnd);
+
+  return () => {
+    map.off("dragstart", onDragStart);
+    map.off("dragend", onDragEnd);
+    container.classList.remove("carradar-map--interactive", "carradar-map--grabbing");
+  };
+}
+
 export function CarRadarMap({
   accessToken,
   items,
@@ -91,10 +152,35 @@ export function CarRadarMap({
   showOpenFullMap,
   fullMapHref = "/map",
   enableInteraction = true,
+  enableScrollZoom,
+  cooperativeGestures,
+  enableDoubleClickZoom,
+  enableDragPan,
   initialFilter: _initialFilter,
   enhanceMarkers = true,
 }: CarRadarMapProps) {
+  const { t } = useLocale();
   const isDashboard = variant === "dashboard";
+
+  const interactions = useMemo(() => {
+    const overrides: MapInteractionOverrides = {};
+    if (enableScrollZoom !== undefined) overrides.scrollZoom = enableScrollZoom;
+    if (cooperativeGestures !== undefined) {
+      overrides.cooperativeGestures = cooperativeGestures;
+    }
+    if (enableDoubleClickZoom !== undefined) {
+      overrides.doubleClickZoom = enableDoubleClickZoom;
+    }
+    if (enableDragPan !== undefined) overrides.dragPan = enableDragPan;
+    return resolveMapInteractions(variant, enableInteraction, overrides);
+  }, [
+    variant,
+    enableInteraction,
+    enableScrollZoom,
+    cooperativeGestures,
+    enableDoubleClickZoom,
+    enableDragPan,
+  ]);
   const handleSelect = onSelectItem ?? onSelect ?? (() => undefined);
   const useCustomControls = showCustomControls ?? isDashboard;
   const useNativeControls =
@@ -102,8 +188,13 @@ export function CarRadarMap({
     (showControls !== false && variant === "full" && !useCustomControls);
   const shellMinHeight = isDashboard ? "min-h-[420px]" : "min-h-[640px]";
   const [mapReady, setMapReady] = useState(false);
+  const [hoveredMember, setHoveredMember] = useState<MapItem | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(
+    null
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const cursorCleanupRef = useRef<(() => void) | null>(null);
   const mapRef = useRef<import("mapbox-gl").Map | null>(null);
   const markersRef = useRef<import("mapbox-gl").Marker[]>([]);
   const mapboxRef = useRef<typeof import("mapbox-gl").default | null>(null);
@@ -136,14 +227,14 @@ export function CarRadarMap({
           center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
           zoom: isDashboard ? DASHBOARD_ZOOM : DEFAULT_ZOOM,
           attributionControl: true,
-          scrollZoom: enableInteraction && !isDashboard,
-          boxZoom: enableInteraction,
-          dragRotate: enableInteraction && !isDashboard,
-          dragPan: enableInteraction,
-          keyboard: enableInteraction && !isDashboard,
-          doubleClickZoom: enableInteraction && !isDashboard,
-          touchZoomRotate: enableInteraction,
-          cooperativeGestures: isDashboard,
+          scrollZoom: interactions.scrollZoom,
+          boxZoom: interactions.boxZoom,
+          dragRotate: interactions.dragRotate,
+          dragPan: interactions.dragPan,
+          keyboard: interactions.keyboard,
+          doubleClickZoom: interactions.doubleClickZoom,
+          touchZoomRotate: interactions.touchZoomRotate,
+          cooperativeGestures: interactions.cooperativeGestures,
         });
 
         if (useNativeControls) {
@@ -236,6 +327,16 @@ export function CarRadarMap({
             });
           }
 
+          applyMapInteractions(map, interactions);
+          if (containerRef.current) {
+            cursorCleanupRef.current?.();
+            cursorCleanupRef.current = bindMapCursor(
+              map,
+              containerRef.current,
+              interactions.dragPan
+            );
+          }
+
           scheduleResize(map);
           setMapReady(true);
           onStatusChangeRef.current?.("ready");
@@ -256,6 +357,8 @@ export function CarRadarMap({
     return () => {
       cancelled = true;
       setMapReady(false);
+      cursorCleanupRef.current?.();
+      cursorCleanupRef.current = null;
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       mapRef.current?.remove();
@@ -263,6 +366,28 @@ export function CarRadarMap({
       mapboxRef.current = null;
     };
   }, [accessToken, isDashboard, useNativeControls, enableInteraction, variant]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const container = containerRef.current;
+    if (!map || !mapReady) return;
+
+    const apply = () => {
+      applyMapInteractions(map, interactions);
+      cursorCleanupRef.current?.();
+      cursorCleanupRef.current = container
+        ? bindMapCursor(map, container, interactions.dragPan)
+        : null;
+    };
+
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+
+    return () => {
+      cursorCleanupRef.current?.();
+      cursorCleanupRef.current = null;
+    };
+  }, [mapReady, interactions]);
 
   const handleZoomIn = useCallback(() => {
     mapRef.current?.zoomIn({ duration: 280 });
@@ -281,6 +406,18 @@ export function CarRadarMap({
     });
   }, [isDashboard]);
 
+  const positionHoverCard = useCallback((item: MapItem) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const p = map.project([item.lng, item.lat]);
+    setHoverPoint({ x: p.x, y: p.y });
+  }, []);
+
+  const clearHover = useCallback(() => {
+    setHoveredMember(null);
+    setHoverPoint(null);
+  }, []);
+
   useEffect(() => {
     const map = mapRef.current;
     const mapboxgl = mapboxRef.current;
@@ -298,7 +435,18 @@ export function CarRadarMap({
           item,
           selectedId === item.id,
           () => onSelectRef.current(item),
-          { enhanced: enhanceMarkers }
+          {
+            enhanced: enhanceMarkers,
+            onMouseEnter:
+              item.type === "member"
+                ? () => {
+                    setHoveredMember(item);
+                    positionHoverCard(item);
+                  }
+                : undefined,
+            onMouseLeave:
+              item.type === "member" ? clearHover : undefined,
+          }
         );
         const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
           .setLngLat([item.lng, item.lat])
@@ -319,7 +467,19 @@ export function CarRadarMap({
     } else {
       map.once("load", sync);
     }
-  }, [items, selectedId, enhanceMarkers]);
+  }, [items, selectedId, enhanceMarkers, positionHoverCard, clearHover]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const onMove = () => clearHover();
+    map.on("move", onMove);
+    map.on("zoom", onMove);
+    return () => {
+      map.off("move", onMove);
+      map.off("zoom", onMove);
+    };
+  }, [mapReady, clearHover]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -347,7 +507,7 @@ export function CarRadarMap({
   return (
     <div
       className={cn(
-        "carradar-map-shell absolute inset-0 h-full w-full",
+        "carradar-map-shell relative absolute inset-0 h-full w-full",
         shellMinHeight,
         isDashboard && "carradar-map-shell--dashboard",
         heightClassName
@@ -370,6 +530,22 @@ export function CarRadarMap({
           heightClassName
         )}
       />
+      {hoveredMember && hoverPoint ? (
+        <MemberMapHoverPreview
+          item={hoveredMember}
+          style={{ left: hoverPoint.x, top: hoverPoint.y }}
+        />
+      ) : null}
+      {isDashboard && mapReady ? (
+        <p
+          className="pointer-events-none absolute bottom-14 left-3 z-[20] max-w-[200px] rounded-lg border border-white/10 bg-[#0B1118]/85 px-2.5 py-1.5 text-[10px] leading-snug text-white/55 backdrop-blur-md"
+          aria-hidden
+        >
+          {interactions.cooperativeGestures
+            ? t.map.interactionHintCooperative
+            : t.map.interactionHint}
+        </p>
+      ) : null}
       {useCustomControls && mapReady ? (
         <MapControls
           variant={variant}

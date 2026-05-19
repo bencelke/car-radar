@@ -182,6 +182,7 @@ export async function loadMapItems(): Promise<MapItem[]> {
       metadata: {
         entityId: member.id,
         displayName: member.displayName,
+        nickname: member.nickname ?? "",
         carMake: member.carMake ?? "",
         carModel: member.carModel ?? "",
         carYear: member.carYear ?? "",
@@ -189,8 +190,11 @@ export async function loadMapItems(): Promise<MapItem[]> {
         buildSummary: member.buildSummary ?? "",
         buildTags: member.buildTags?.join(", ") ?? "",
         clubId: member.clubId,
-        clubName: club?.name ?? "",
-        statusLabel: member.verifiedByClub ? "Club verified" : "Enthusiast",
+        clubName: member.clubName ?? club?.name ?? "",
+        clubSlug: club?.slug ?? "",
+        role: member.role ?? "member",
+        avatarUrl: member.avatarUrl ?? member.imageUrl ?? "",
+        statusLabel: member.verifiedByClub ? "Club verified" : "",
       },
     });
   });

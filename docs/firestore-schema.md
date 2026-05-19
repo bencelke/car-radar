@@ -107,10 +107,16 @@ Documents map to `ClubMember`.
 | `carName` | string? | |
 | `buildSummary` | string? | |
 | `buildTags` | string[]? | |
-| `instagram` | string? | |
+| `instagram` | string? | External link only — no scraping |
 | `tiktok` | string? | |
 | `youtube` | string? | |
-| `imageUrl` | string? | |
+| `imageUrl` | string? | Optional submitted image |
+| `avatarUrl` | string? | Optional avatar (same as imageUrl if set) |
+| `clubName` | string? | Denormalized display |
+| `role` | string? | `member` \| `club_owner` \| `club_admin` \| `founder` \| `road_captain` \| `photographer` |
+| `roleLabel` | string? | Optional custom label override |
+| `lat` | number? | Map pin (not live GPS) |
+| `lng` | number? | Map pin |
 | `verifiedByClub` | boolean? | |
 | `featured` | boolean? | |
 | `createdAt` | string (ISO) | |

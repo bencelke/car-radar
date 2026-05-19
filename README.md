@@ -21,7 +21,7 @@ CarRadar is a web-first car enthusiast discovery platform. It helps users find c
 - **Day 9:** Admin edit-before-publish + non-blocking duplicate warnings on `/admin`
 - **Day 10:** Admin CSV import → pending submissions (no auto-publish)
 - **Day 11:** Admin route protection (Firebase Auth + `users` role) and `firestore.rules` foundation
-- **Day 12:** Public detail pages (`/shops/[slug]`, `/events/[slug]`, `/clubs/[slug]`, `/members/[id]`, `/cities/[city]`) with SEO metadata and shareable links from list cards and the map
+- **Day 12:** Public detail pages + member profiles with map hover previews, role badges, and `/members/[id]` garage-style profile pages
 - **Not yet:** Correction auto-apply, live GPS, chat, or marketplace
 
 ## Local development
@@ -128,6 +128,14 @@ npm run build   # production build
 npm run start   # run production build locally
 npm run lint    # ESLint
 ```
+
+### Member profiles & map cards (Day 12)
+
+- Hover a **member** marker on `/` or `/map` for a compact preview (name, car, club, role badge, Instagram link).
+- Click a member marker for a richer side panel with build summary, tags, **Follow** placeholder, and **View full profile**.
+- Full profile at `/members/[id]` (e.g. `/members/member-boris`) — car build card layout, club affiliation, social links, correction CTA.
+- Club pages show role badges (Founder, Road Captain, Club Admin, etc.) on member cards.
+- Instagram is an **external link only** — no scraping, avatars, or follower counts.
 
 ### Public detail pages (Day 12)
 

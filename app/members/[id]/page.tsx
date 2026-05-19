@@ -7,6 +7,8 @@ import { PageShell } from "@/components/layout/PageShell";
 import { brand } from "@/lib/config/brand";
 import { getClubMemberById } from "@/lib/repositories/club-members";
 import { getClubById } from "@/lib/repositories/clubs";
+import { getApprovedEvents } from "@/lib/repositories/events";
+import { getApprovedShops } from "@/lib/repositories/shops";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -36,7 +38,18 @@ export default async function MemberDetailPage({ params }: PageProps) {
   const member = await getClubMemberById(id);
   if (!member) notFound();
 
-  const club = await getClubById(member.clubId);
+  const [club, allShops, allEvents] = await Promise.all([
+    getClubById(member.clubId),
+    getApprovedShops(),
+    getApprovedEvents(),
+  ]);
+
+  const relatedShops = allShops
+    .filter((s) => s.city === member.city)
+    .slice(0, 6);
+  const relatedEvents = allEvents
+    .filter((e) => e.city === member.city)
+    .slice(0, 6);
 
   return (
     <PageShell>
@@ -46,7 +59,12 @@ export default async function MemberDetailPage({ params }: PageProps) {
       >
         ← Members
       </Link>
-      <MemberDetailView member={member} club={club} />
+      <MemberDetailView
+        member={member}
+        club={club}
+        relatedShops={relatedShops}
+        relatedEvents={relatedEvents}
+      />
     </PageShell>
   );
 }
