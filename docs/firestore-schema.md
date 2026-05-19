@@ -9,6 +9,7 @@ Documents map to `CarShop`.
 | Field | Type | Notes |
 |-------|------|--------|
 | `name` | string | Display name |
+| `slug` | string? | Optional URL slug; public pages fall back to slugified `name` or document id |
 | `category` | string | `PlaceCategory` enum value |
 | `status` | string | `draft` \| `pending` \| `approved` \| `rejected` \| `archived` |
 | `city` | string | |
@@ -38,6 +39,7 @@ Documents map to `CarEvent`.
 | Field | Type | Notes |
 |-------|------|--------|
 | `title` | string | |
+| `slug` | string? | Optional URL slug; public pages fall back to slugified `title` or document id |
 | `type` | string | Meet, Cruise, Festival, etc. |
 | `status` | string | ListingStatus |
 | `city` | string | |
@@ -293,16 +295,38 @@ Sample file: `/public/samples/car-radar-import-sample.csv`
 - Optional alias collections (`shops` vs `car_shops`) cleanup if consolidating naming
 - Persist publish drafts on submission for multi-session admin review
 
-## `users` (future)
+## `users`
 
-Reserved for Firebase Auth profiles.
+Firebase Auth profile document: `users/{uid}`.
 
 | Field | Type | Notes |
 |-------|------|--------|
-| `email` | string | |
-| `displayName` | string? | |
-| `role` | string? | `user` \| `moderator` \| `admin` |
-| `createdAt` | string (ISO) | |
+| `email` | string | From Firebase Auth |
+| `role` | string | `user` \| `admin` |
+| `isAdmin` | boolean? | When `true`, grants admin (along with `role === "admin"`) |
+| `createdAt` | string (ISO)? | |
+| `updatedAt` | string (ISO)? | |
+
+On first sign-in, the app creates `role: "user"` if the document is missing. **Do not hardcode admin emails in app code.** Promote the first admin manually in Firebase Console (see README).
+
+### Security model (Day 11)
+
+| Action | Who |
+|--------|-----|
+| Read approved listings (`car_shops`, `car_events`, `clubs`, `club_members`, `community_zones`, `communities`) | Public |
+| Create `submissions` with `status: pending` | Anyone (no auth required) |
+| Read/update/delete `submissions` | Admins only |
+| Write listing collections (publish, CSV import path after approve) | Admins only |
+| Read/write own `users/{uid}` | Signed-in user |
+| Set `role` / `isAdmin` on any user | Admins only (or Console during bootstrap) |
+
+Rules file: `firestore.rules`. Deploy with Firebase CLI when ready:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Until rules are deployed, the Firebase Console default test mode may allow broader access — treat that as temporary for development only.
 
 ## `saved_places` (future)
 
@@ -315,8 +339,6 @@ Subcollection or top-level with `userId` + `placeId` + `placeType`.
 - `communities`: `status` + `featured` (desc)
 - `submissions`: `status` + `createdAt` (desc)
 
-## Security rules (placeholder)
+## Security rules
 
-- Public read: `status == approved` on listing collections
-- Write submissions: authenticated or rate-limited anonymous (TBD)
-- Admin writes: custom claims / role check (TBD)
+See `firestore.rules` in the repo root and the **Security model (Day 11)** section under `users` above.

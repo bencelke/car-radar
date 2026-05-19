@@ -15,6 +15,8 @@ export type {
   Submission,
   SubmissionStatus,
   SubmissionType,
+  UserProfile,
+  UserRole,
 } from "./domain";
 
 export type {

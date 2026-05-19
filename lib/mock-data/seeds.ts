@@ -137,6 +137,7 @@ export const mockShops: CarShop[] = [
 export const mockEvents: CarEvent[] = [
   {
     id: "cars-coffee-kl",
+    slug: "cars-and-coffee-kaiserslautern",
     title: "Cars & Coffee Kaiserslautern",
     type: "Meet",
     status: "approved",

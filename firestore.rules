@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+          userDoc().data.role == 'admin'
+          || userDoc().data.isAdmin == true
+        );
+    }
+
+    function isApprovedListing() {
+      return resource.data.status == 'approved';
+    }
+
+    function isPendingSubmission() {
+      return request.resource.data.status == 'pending';
+    }
+
+    function submissionCreateAllowed() {
+      return isPendingSubmission()
+        && !request.resource.data.keys().hasAny(['approvedEntityId', 'publishedCollection'])
+        && (!('reviewedAt' in request.resource.data) || request.resource.data.reviewedAt == null);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow create: if isOwner(userId)
+        && request.resource.data.email is string
+        && request.resource.data.role == 'user'
+        && (
+          !('isAdmin' in request.resource.data)
+          || request.resource.data.isAdmin == false
+        );
+
+      allow update: if isAdmin()
+        || (
+          isOwner(userId)
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin'])
+        );
+
+      allow delete: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if isAdmin();
+
+      allow create: if submissionCreateAllowed();
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /car_shops/{docId} {
+      allow read: if isApprovedListing();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /car_events/{docId} {
+      allow read: if isApprovedListing();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /clubs/{docId} {
+      allow read: if isApprovedListing();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /club_members/{docId} {
+      allow read: if resource.data.status == 'approved';
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /community_zones/{docId} {
+      allow read: if isApprovedListing();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /communities/{docId} {
+      allow read: if isApprovedListing();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

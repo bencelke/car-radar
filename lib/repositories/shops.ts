@@ -17,6 +17,7 @@ import {
   logRepositoryFallback,
   sortFeaturedFirst,
 } from "@/lib/repositories/utils";
+import { matchesSlugOrId } from "@/lib/utils/slug";
 
 function approvedShopsWithPublished(): CarShop[] {
   return filterApproved([...getPublishedShops(), ...mockShops]);
@@ -65,4 +66,12 @@ export async function getShopById(id: string): Promise<CarShop | null> {
     logRepositoryFallback(COLLECTIONS.carShops, error);
     return fromMock ?? null;
   }
+}
+
+export async function getShopBySlug(slugOrId: string): Promise<CarShop | null> {
+  const byId = await getShopById(slugOrId);
+  if (byId && matchesSlugOrId(byId, slugOrId)) return byId;
+
+  const shops = await getApprovedShops();
+  return shops.find((shop) => matchesSlugOrId(shop, slugOrId)) ?? null;
 }

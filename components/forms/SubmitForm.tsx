@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { GlassPanel } from "@/components/dashboard/glass-panel";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { isFirebaseConfigured } from "@/lib/firebase/client";
@@ -116,6 +117,7 @@ export function SubmitForm(props: SubmitFormProps) {
 
 function SubmitFormInner({ compact = false, showHeader = true }: SubmitFormProps) {
   const { t } = useLocale();
+  const { user } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabKey>("shop");
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -217,7 +219,8 @@ function SubmitFormInner({ compact = false, showHeader = true }: SubmitFormProps
         youtube: form.youtube,
         website: form.website,
         sourceUrl: form.sourceUrl,
-        submittedByEmail: form.submittedByEmail,
+        submittedByEmail: form.submittedByEmail || user?.email || undefined,
+        submittedByUid: user?.uid,
         permissionConfirmed:
           type === "member" ? form.permissionConfirmed : undefined,
         services: type === "shop" ? form.services : undefined,

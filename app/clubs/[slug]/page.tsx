@@ -13,6 +13,10 @@ import { getApprovedEvents } from "@/lib/repositories/events";
 import { getMembersByClubId } from "@/lib/repositories/club-members";
 import { getClubById, getClubBySlug } from "@/lib/repositories/clubs";
 import { getApprovedShops } from "@/lib/repositories/shops";
+import { getApprovedCommunityZones } from "@/lib/repositories/community-zones";
+import { CorrectionLink } from "@/components/detail/CorrectionLink";
+import { RelatedSection } from "@/components/detail/RelatedSection";
+import { RelatedEntityList } from "@/components/detail/RelatedEntityList";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -29,8 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const club = await resolveClub(slug);
   if (!club) return { title: "Club not found" };
   return {
-    title: club.name,
-    description: club.description,
+    title: `${club.name} | Car Club in ${club.city} | ${brand.appName}`,
+    description: `${club.name} — ${club.type} in ${club.city}. ${club.description}`,
   };
 }
 
@@ -39,11 +43,14 @@ export default async function ClubDetailPage({ params }: PageProps) {
   const club = await resolveClub(slug);
   if (!club) notFound();
 
-  const [members, allEvents, allShops] = await Promise.all([
+  const [members, allEvents, allShops, allZones] = await Promise.all([
     getMembersByClubId(club.id),
     getApprovedEvents(),
     getApprovedShops(),
+    getApprovedCommunityZones(),
   ]);
+
+  const clubZones = allZones.filter((z) => z.communityId === club.id);
 
   const relatedEvents = allEvents.filter(
     (e) =>
@@ -64,6 +71,17 @@ export default async function ClubDetailPage({ params }: PageProps) {
         <ClubEventsSection club={club} events={relatedEvents} />
         <ClubNearbyShopsSection club={club} shops={nearbyShops} />
       </div>
+      {clubZones.length > 0 ? (
+        <RelatedSection title="Club areas">
+          <RelatedEntityList
+            items={clubZones.map((zone) => ({
+              href: "/map",
+              title: zone.name,
+              subtitle: zone.description,
+            }))}
+          />
+        </RelatedSection>
+      ) : null}
       <div className="flex flex-wrap gap-3">
         <Button
           nativeButton={false}
@@ -89,6 +107,11 @@ export default async function ClubDetailPage({ params }: PageProps) {
           Submit an event for this club
         </Button>
       </div>
+      <CorrectionLink
+        targetType="club"
+        targetName={club.name}
+        entityId={club.id}
+      />
     </PageShell>
   );
 }

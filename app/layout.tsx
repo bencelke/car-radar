@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Rajdhani } from "next/font/google";
 
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { TopNav } from "@/components/layout/TopNav";
 import { brand } from "@/lib/config/brand";
@@ -38,8 +39,10 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-[#05070A] font-sans text-[#F8FAFC] antialiased">
         <LocaleProvider>
-          <TopNav />
-          <main className="flex flex-1 flex-col">{children}</main>
+          <AuthProvider>
+            <TopNav />
+            <main className="flex flex-1 flex-col">{children}</main>
+          </AuthProvider>
         </LocaleProvider>
       </body>
     </html>

@@ -20,7 +20,9 @@ CarRadar is a web-first car enthusiast discovery platform. It helps users find c
 - **Day 8:** Approving shop/event/club/member submissions publishes to public listings (`car_shops`, `car_events`, `clubs`, `club_members`)
 - **Day 9:** Admin edit-before-publish + non-blocking duplicate warnings on `/admin`
 - **Day 10:** Admin CSV import → pending submissions (no auto-publish)
-- **Not yet:** Correction auto-apply, Firebase Auth requirement, live GPS, chat, or marketplace
+- **Day 11:** Admin route protection (Firebase Auth + `users` role) and `firestore.rules` foundation
+- **Day 12:** Public detail pages (`/shops/[slug]`, `/events/[slug]`, `/clubs/[slug]`, `/members/[id]`, `/cities/[city]`) with SEO metadata and shareable links from list cards and the map
+- **Not yet:** Correction auto-apply, live GPS, chat, or marketplace
 
 ## Local development
 
@@ -39,17 +41,41 @@ Users can submit shops, events, clubs, member builds, and corrections for **revi
 
 - **With Firebase:** All six `NEXT_PUBLIC_FIREBASE_*` variables must be set. Submissions are written to the Firestore collection `submissions` with `status: "pending"`.
 - **Without Firebase:** The UI still succeeds; `createSubmission` logs `[CarRadar] Firebase not configured. Simulating submission.` and stores entries in the in-memory mock submission store (visible on `/admin` in dev).
-- **Auth:** Login is not required. An optional email field is available on the form; `submittedByUid` will be filled when Auth is added later.
+- **Auth:** Login is not required to submit. Signed-in users automatically attach `submittedByUid` / email when Firebase Auth is configured.
 - **Homepage:** The submit preview card links to `/submit` instead of embedding the full form.
 
 In development, if Firebase is not configured, `/submit` shows a small note that submissions are simulated.
 
 ### Admin review (`/admin`)
 
-Moderators review the submission queue (no login gate yet — dev/admin route only).
+`/admin` is protected when Firebase is configured: sign in required, then **admin** role on your `users/{uid}` document. Without Firebase env vars, admin UI stays available in **development mode** with a visible warning (mock review + CSV import still work).
 
-1. **Mock mode:** Submit one or more entries at `/submit` (without Firebase env). Open `/admin`, use status tabs (Pending, Approved, Rejected, Needs changes, All), select a row, and use **Approve**, **Reject**, or **Needs changes**. Reject and needs changes require a review note. Status updates apply to the in-memory mock store (dev console may log mock warnings).
-2. **Firebase mode:** Configure all `NEXT_PUBLIC_FIREBASE_*` vars, submit via `/submit`, then open `/admin` and approve. Confirm in Firestore → `submissions` that `status`, `approvedEntityId`, and `publishedCollection` are set, and a new doc exists in `car_shops`, `car_events`, `clubs`, or `club_members`.
+1. **Mock mode:** No Firebase env → open `/admin` directly (dev warning shown). Review, CSV import, and approve use mock stores as before.
+2. **Firebase mode:** Sign in at `/admin` → access denied until you are promoted to admin (see below).
+
+### First admin setup (Firebase)
+
+1. Create a Firebase project and enable **Email/Password** authentication.
+2. Add all `NEXT_PUBLIC_FIREBASE_*` variables to `.env.local` (see `.env.example`).
+3. Run the app, open `/admin`, and **Sign up** / **Sign in** with your email.
+4. In [Firebase Console](https://console.firebase.google.com) → **Firestore** → collection `users` → document `{your-uid}`:
+   - Set `role` to `admin`
+   - Set `isAdmin` to `true`
+5. Refresh `/admin` — the review and CSV import dashboard should load.
+
+Do not hardcode admin emails in the codebase. Use Firestore for role assignment.
+
+### Deploy Firestore security rules
+
+Rules live in `firestore.rules`. `firebase.json` points Firestore to that file.
+
+When you have the [Firebase CLI](https://firebase.google.com/docs/cli) installed and the project linked:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Until rules are deployed, rely on Console rules appropriate for your environment. **Production:** only admins should reach `/admin`; public users must not bulk-import or publish listings.
 
 ### Publish on approve (Day 8)
 
@@ -102,6 +128,23 @@ npm run build   # production build
 npm run start   # run production build locally
 npm run lint    # ESLint
 ```
+
+### Public detail pages (Day 12)
+
+Shareable, SEO-friendly pages for discovery via Google, Instagram DMs, and direct links:
+
+| Route | Example |
+|-------|---------|
+| `/shops/[slug]` | `/shops/kmc-performance` |
+| `/events/[slug]` | `/events/cars-and-coffee-kaiserslautern` |
+| `/clubs/[slug]` | `/clubs/bavarian-crew` |
+| `/members/[id]` | `/members/member-boris` |
+| `/cities/[city]` | `/cities/kaiserslautern` |
+
+- Slugs prefer an optional `slug` field on shops/events; otherwise `lib/utils/slug.ts` derives a slug from the name/title or falls back to the document id.
+- Each page exports `generateMetadata` for title/description templates.
+- List cards on `/shops`, `/events`, `/clubs`, `/members` and the map detail panel link to these routes.
+- City pages aggregate approved shops, clubs, events, members, and community zones for local SEO.
 
 ## Project structure
 

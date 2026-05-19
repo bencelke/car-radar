@@ -44,6 +44,8 @@ export type BasePlace = {
 };
 
 export type CarShop = BasePlace & {
+  /** Optional URL slug; falls back to slugified name or document id */
+  slug?: string;
   services: string[];
   brandsSupported?: string[];
   rating?: number;
@@ -53,6 +55,8 @@ export type CarShop = BasePlace & {
 
 export type CarEvent = {
   id: string;
+  /** Optional URL slug; falls back to slugified title or document id */
+  slug?: string;
   title: string;
   type: string;
   status: ListingStatus;
@@ -255,3 +259,13 @@ export type CreateSubmissionInput = Omit<
   Submission,
   "id" | "status" | "createdAt" | "updatedAt"
 >;
+
+export type UserRole = "admin" | "user";
+
+export type UserProfile = {
+  email: string;
+  role: UserRole;
+  isAdmin?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};

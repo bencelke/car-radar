@@ -8,6 +8,7 @@ import { accentStyles } from "@/lib/config/accents";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { eventToEventItem } from "@/lib/mappers/ui";
 import type { CarEvent, Club } from "@/lib/types";
+import { eventDetailPath } from "@/lib/utils/entity-paths";
 import { cn } from "@/lib/utils";
 
 type ClubEventsSectionProps = {
@@ -34,12 +35,14 @@ export function ClubEventsSection({ club, events }: ClubEventsSectionProps) {
       />
       <div className="space-y-2 p-4 pt-0">
         {items.length > 0 ? (
-          items.map((event) => {
+          events.map((source, index) => {
+            const event = items[index];
             const accent = accentStyles[event.accent];
             return (
-              <div
+              <Link
                 key={event.id}
-                className="flex gap-3 rounded-xl border border-white/[0.06] bg-[#151B24]/40 p-2"
+                href={eventDetailPath(source)}
+                className="flex gap-3 rounded-xl border border-white/[0.06] bg-[#151B24]/40 p-2 transition hover:border-white/[0.1]"
               >
                 <div
                   className={cn(
@@ -59,7 +62,7 @@ export function ClubEventsSection({ club, events }: ClubEventsSectionProps) {
                     {event.interested} interested
                   </p>
                 </div>
-              </div>
+              </Link>
             );
           })
         ) : (

@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
-import { ShopsPanel } from "@/components/dashboard/ShopsPanel";
+import { ShopCard } from "@/components/cards/ShopCard";
 import { SectionPage } from "@/components/shared/section-page";
 import { brand } from "@/lib/config/brand";
-import { shopToShopItem } from "@/lib/mappers/ui";
 import { getApprovedShops } from "@/lib/repositories/shops";
 
 export const metadata: Metadata = {
@@ -12,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ShopsPage() {
-  const shops = (await getApprovedShops()).map(shopToShopItem);
+  const shops = await getApprovedShops();
 
   return (
     <SectionPage
@@ -20,7 +19,11 @@ export default async function ShopsPage() {
       description="Tuning, detailing, wraps, and wheel specialists near you."
       badge="Shops"
     >
-      <ShopsPanel shops={shops} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {shops.map((shop) => (
+          <ShopCard key={shop.id} shop={shop} />
+        ))}
+      </div>
     </SectionPage>
   );
 }

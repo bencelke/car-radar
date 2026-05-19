@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { PublishDraftEditor } from "@/components/admin/PublishDraftEditor";
+import { useAdminGuard } from "@/components/admin/useAdminGuard";
 import { GlassPanel, PanelHeader } from "@/components/dashboard/glass-panel";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,8 @@ export function SubmissionReviewPanel({
   initialSubmissions,
 }: SubmissionReviewPanelProps) {
   const { t } = useLocale();
+  const { canUseAdminTools, blocked, AdminGuardFallback, user } =
+    useAdminGuard();
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [filter, setFilter] = useState<StatusFilter>("pending");
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -205,7 +208,7 @@ export function SubmissionReviewPanel({
       const result = await approveSubmission(
         id,
         undefined,
-        undefined,
+        user?.uid,
         canPublishSubmission(type) ? draft : undefined
       );
       if (!result.success) {
@@ -274,6 +277,18 @@ export function SubmissionReviewPanel({
     setModal({ id, action });
     setReviewNote("");
     setError(null);
+  }
+
+  if (blocked) {
+    return (
+      <GlassPanel className="mt-6 p-6">
+        <AdminGuardFallback />
+      </GlassPanel>
+    );
+  }
+
+  if (!canUseAdminTools) {
+    return null;
   }
 
   return (

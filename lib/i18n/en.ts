@@ -262,6 +262,42 @@ export const en = {
     openInstagram: "Open Instagram",
     openWebsite: "Open website",
   },
+  detail: {
+    viewDetails: "View details",
+    submitCorrection: "Submit correction",
+    nearbyShops: "Nearby shops",
+    relatedEvents: "Related events",
+    relatedClubs: "Nearby clubs",
+    relatedClub: "Club",
+    clubMembers: "Club members",
+    memberCars: "Member cars",
+    carSceneIn: "Car scene in",
+    citySubtitle:
+      "Shops, clubs, meets, member builds, and club areas — all in one place.",
+    directions: "Directions",
+    visitInstagram: "Visit Instagram",
+    visitWebsite: "Visit website",
+    socialLinks: "Social links",
+    services: "Services",
+    brandsSupported: "Brands supported",
+    build: "Build",
+    tags: "Tags",
+  },
+  auth: {
+    adminSignInRequired: "Sign in to access the admin dashboard.",
+    adminAccessRequired: "Admin access required.",
+    signedInAs: "You are signed in as",
+    developmentMode: "Development mode",
+    devAdminDisabled:
+      "Admin protection is disabled because Firebase is not configured.",
+    signOut: "Sign out",
+    openSignIn: "Open sign in",
+    noAdminPermissions: "Your account does not have admin permissions.",
+    signIn: "Sign in",
+    signUp: "Sign up",
+    authError: "Could not sign in. Check your email and password.",
+    firebaseRequired: "Firebase Auth is required for sign in.",
+  },
 };
 
 export type Dictionary = typeof en;

@@ -1,4 +1,5 @@
 import { categoryToLabel } from "@/lib/mappers/ui";
+import { getEntitySlug } from "@/lib/utils/slug";
 import {
   offsetCoordinates,
   resolveCityCoordinates,
@@ -72,6 +73,8 @@ export async function loadMapItems(): Promise<MapItem[]> {
       createdAt: shop.createdAt,
       tags: shop.services,
       metadata: {
+        entityId: shop.id,
+        slug: getEntitySlug(shop),
         services: shop.services?.join(", "),
         rating: shop.rating ?? 0,
         reviewCount: shop.reviewCount ?? 0,
@@ -103,6 +106,8 @@ export async function loadMapItems(): Promise<MapItem[]> {
       featured: event.featured,
       createdAt: event.createdAt ?? event.startTime,
       metadata: {
+        entityId: event.id,
+        slug: getEntitySlug(event),
         startTime: event.startTime,
         endTime: event.endTime ?? "",
         interestedCount: event.interestedCount ?? 0,
@@ -139,6 +144,7 @@ export async function loadMapItems(): Promise<MapItem[]> {
       tags: club.tags,
       createdAt: club.createdAt,
       metadata: {
+        entityId: club.id,
         slug: club.slug,
         memberCount: club.memberCount ?? 0,
       },
@@ -174,6 +180,7 @@ export async function loadMapItems(): Promise<MapItem[]> {
       tags: member.buildTags,
       createdAt: member.createdAt,
       metadata: {
+        entityId: member.id,
         displayName: member.displayName,
         carMake: member.carMake ?? "",
         carModel: member.carModel ?? "",

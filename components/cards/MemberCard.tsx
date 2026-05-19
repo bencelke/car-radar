@@ -4,7 +4,9 @@ import Link from "next/link";
 import { BadgeCheck, Share2 } from "lucide-react";
 
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { Button } from "@/components/ui/button";
 import type { Club, ClubMember } from "@/lib/types";
+import { memberDetailPath } from "@/lib/utils/entity-paths";
 import { cn } from "@/lib/utils";
 
 type MemberCardProps = {
@@ -19,6 +21,7 @@ function carLabel(member: ClubMember): string {
 
 export function MemberCard({ member, club }: MemberCardProps) {
   const { t } = useLocale();
+  const href = memberDetailPath(member);
   const accent =
     member.carMake?.toLowerCase().includes("bmw") ? "from-blue-600/40" : "from-red-600/40";
 
@@ -83,17 +86,27 @@ export function MemberCard({ member, club }: MemberCardProps) {
               {member.area ? ` · ${member.area}` : ""}
             </span>
           )}
-          {member.instagram ? (
-            <a
-              href={member.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex size-7 items-center justify-center rounded-lg border border-white/[0.08] text-[#64748B] hover:text-[#F8FAFC]"
-              aria-label={t.members.viewInstagram}
+          <div className="flex gap-1">
+            {member.instagram ? (
+              <a
+                href={member.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex size-7 items-center justify-center rounded-lg border border-white/[0.08] text-[#64748B] hover:text-[#F8FAFC]"
+                aria-label={t.members.viewInstagram}
+              >
+                <Share2 className="size-3" />
+              </a>
+            ) : null}
+            <Button
+              nativeButton={false}
+              render={<Link href={href} />}
+              size="sm"
+              className="h-7 px-2 text-[10px] border border-white/[0.08] bg-[#151B24]/80"
             >
-              <Share2 className="size-3" />
-            </a>
-          ) : null}
+              {t.detail.viewDetails}
+            </Button>
+          </div>
         </div>
       </div>
     </article>

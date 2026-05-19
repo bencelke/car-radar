@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
-import { EventsPanel } from "@/components/dashboard/EventsPanel";
+import { EventCard } from "@/components/cards/EventCard";
 import { SectionPage } from "@/components/shared/section-page";
 import { brand } from "@/lib/config/brand";
-import { eventToEventItem } from "@/lib/mappers/ui";
 import { getUpcomingEvents } from "@/lib/repositories/events";
 
 export const metadata: Metadata = {
@@ -12,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function EventsPage() {
-  const events = (await getUpcomingEvents()).map(eventToEventItem);
+  const events = await getUpcomingEvents();
 
   return (
     <SectionPage
@@ -20,7 +19,11 @@ export default async function EventsPage() {
       description="Browse upcoming meets, cruise nights, and car shows."
       badge="Events"
     >
-      <EventsPanel events={events} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {events.map((event) => (
+          <EventCard key={event.id} event={event} />
+        ))}
+      </div>
     </SectionPage>
   );
 }

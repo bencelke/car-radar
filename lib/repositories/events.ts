@@ -17,6 +17,7 @@ import {
   logRepositoryFallback,
   sortFeaturedFirst,
 } from "@/lib/repositories/utils";
+import { matchesSlugOrId } from "@/lib/utils/slug";
 
 function approvedEventsWithPublished(): CarEvent[] {
   return filterApproved([...getPublishedEvents(), ...mockEvents]);
@@ -71,4 +72,12 @@ export async function getEventById(id: string): Promise<CarEvent | null> {
     logRepositoryFallback(COLLECTIONS.carEvents, error);
     return fromMock ?? null;
   }
+}
+
+export async function getEventBySlug(slugOrId: string): Promise<CarEvent | null> {
+  const byId = await getEventById(slugOrId);
+  if (byId && matchesSlugOrId(byId, slugOrId)) return byId;
+
+  const events = await getApprovedEvents();
+  return events.find((event) => matchesSlugOrId(event, slugOrId)) ?? null;
 }

@@ -11,6 +11,7 @@ import {
   metaString,
 } from "@/lib/map/map-utils";
 import type { MapItem } from "@/lib/types";
+import { mapItemDetailPath } from "@/lib/utils/entity-paths";
 import { cn } from "@/lib/utils";
 
 type MapDetailPanelProps = {
@@ -74,10 +75,7 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
     );
   }
 
-  const slug =
-    item.type === "club" && typeof item.metadata?.slug === "string"
-      ? item.metadata.slug
-      : null;
+  const detailHref = mapItemDetailPath(item);
 
   const clubName = metaString(item, "clubName");
   const buildTags = metaString(item, "buildTags");
@@ -225,12 +223,12 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
           </a>
         ) : null}
 
-        {slug ? (
+        {detailHref ? (
           <Link
-            href={`/clubs/${slug}`}
-            className="text-center text-xs text-blue-400/90 hover:text-blue-300"
+            href={detailHref}
+            className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:bg-white/10"
           >
-            View club →
+            {t.detail.viewDetails}
           </Link>
         ) : null}
       </div>

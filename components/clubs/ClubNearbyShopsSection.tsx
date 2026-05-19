@@ -7,6 +7,7 @@ import { GlassPanel, PanelHeader } from "@/components/dashboard/glass-panel";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { shopToShopItem } from "@/lib/mappers/ui";
 import type { CarShop, Club } from "@/lib/types";
+import { shopDetailPath } from "@/lib/utils/entity-paths";
 import { cn } from "@/lib/utils";
 
 type ClubNearbyShopsSectionProps = {
@@ -30,11 +31,14 @@ export function ClubNearbyShopsSection({ club, shops }: ClubNearbyShopsSectionPr
       />
       <ul className="divide-y divide-white/[0.05]">
         {items.length > 0 ? (
-          items.map((shop) => (
-            <li
-              key={shop.id}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#151B24]/50"
-            >
+          shops.map((source, index) => {
+            const shop = items[index];
+            return (
+            <li key={shop.id}>
+              <Link
+                href={shopDetailPath(source)}
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#151B24]/50"
+              >
               <div
                 className={cn(
                   "size-9 shrink-0 rounded-lg bg-gradient-to-br",
@@ -53,8 +57,10 @@ export function ClubNearbyShopsSection({ club, shops }: ClubNearbyShopsSectionPr
                 <Star className="size-3 fill-current" />
                 {shop.rating}
               </span>
+              </Link>
             </li>
-          ))
+            );
+          })
         ) : (
           <li className="px-4 py-6 text-center text-sm text-[#64748B]">
             {t.clubs.noShops}

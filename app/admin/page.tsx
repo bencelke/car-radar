@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { AdminGate } from "@/components/admin/AdminGate";
 import { brand } from "@/lib/config/brand";
 import { getSubmissionsByStatus } from "@/lib/repositories/submissions";
 
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   const submissions = await getSubmissionsByStatus("all");
 
-  return <AdminDashboard initialSubmissions={submissions} />;
+  return <AdminGate initialSubmissions={submissions} />;
 }

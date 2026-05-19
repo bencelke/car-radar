@@ -273,4 +273,42 @@ export const de = {
     openInstagram: "Instagram öffnen",
     openWebsite: "Website öffnen",
   },
+  detail: {
+    viewDetails: "Details ansehen",
+    submitCorrection: "Korrektur einreichen",
+    nearbyShops: "Shops in der Nähe",
+    relatedEvents: "Ähnliche Events",
+    relatedClubs: "Clubs in der Nähe",
+    relatedClub: "Club",
+    clubMembers: "Club-Mitglieder",
+    memberCars: "Mitgliederfahrzeuge",
+    carSceneIn: "Car-Scene in",
+    citySubtitle:
+      "Shops, Clubs, Meets, Builds und Club-Bereiche — alles an einem Ort.",
+    directions: "Route",
+    visitInstagram: "Instagram öffnen",
+    visitWebsite: "Website öffnen",
+    socialLinks: "Social Links",
+    services: "Services",
+    brandsSupported: "Marken",
+    build: "Build",
+    tags: "Tags",
+  },
+  auth: {
+    adminSignInRequired:
+      "Melde dich an, um das Admin-Dashboard zu öffnen.",
+    adminAccessRequired: "Admin-Zugriff erforderlich.",
+    signedInAs: "Du bist angemeldet als",
+    developmentMode: "Entwicklungsmodus",
+    devAdminDisabled:
+      "Der Admin-Schutz ist deaktiviert, weil Firebase nicht konfiguriert ist.",
+    signOut: "Abmelden",
+    openSignIn: "Anmeldung öffnen",
+    noAdminPermissions: "Dein Konto hat keine Admin-Berechtigung.",
+    signIn: "Anmelden",
+    signUp: "Registrieren",
+    authError:
+      "Anmeldung fehlgeschlagen. E-Mail und Passwort prüfen.",
+    firebaseRequired: "Firebase Auth ist für die Anmeldung erforderlich.",
+  },
 } satisfies Dictionary;

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, RotateCcw, Upload } from "lucide-react";
 
+import { useAdminGuard } from "@/components/admin/useAdminGuard";
 import { GlassPanel, PanelHeader } from "@/components/dashboard/glass-panel";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ const SAMPLE_CSV_PATH = "/samples/car-radar-import-sample.csv";
 
 export function CsvImportPanel({ onImported }: CsvImportPanelProps) {
   const { t } = useLocale();
+  const { canUseAdminTools, blocked, AdminGuardFallback } = useAdminGuard();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [csvText, setCsvText] = useState("");
@@ -120,6 +122,18 @@ export function CsvImportPanel({ onImported }: CsvImportPanelProps) {
     } finally {
       setImporting(false);
     }
+  }
+
+  if (blocked) {
+    return (
+      <GlassPanel className="mt-6 p-6">
+        <AdminGuardFallback />
+      </GlassPanel>
+    );
+  }
+
+  if (!canUseAdminTools) {
+    return null;
   }
 
   return (
