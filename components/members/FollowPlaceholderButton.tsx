@@ -23,7 +23,7 @@ export function FollowPlaceholderButton({
     <div className={cn("space-y-1.5", className)}>
       <Button
         type="button"
-        onClick={() => setMessage(t.members.followingComingSoon)}
+        onClick={() => setMessage(t.members.comingSoon)}
         className={cn(
           "gap-2 border border-[#EF4444]/40 bg-[#EF4444]/15 text-[#F8FAFC] hover:bg-[#EF4444]/25",
           fullWidth && "w-full"

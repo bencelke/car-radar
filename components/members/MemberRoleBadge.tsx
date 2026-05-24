@@ -22,6 +22,8 @@ type MemberRoleBadgeProps = {
   role?: MemberRole | string | null;
   size?: "xs" | "sm";
   className?: string;
+  /** When true, also shows the default "Member" role badge */
+  showMember?: boolean;
 };
 
 function RoleIcon({ role }: { role: MemberRole }) {
@@ -56,10 +58,11 @@ export function MemberRoleBadge({
   role,
   size = "sm",
   className,
+  showMember = false,
 }: MemberRoleBadgeProps) {
   const { t } = useLocale();
   const normalized = normalizeMemberRole(role) ?? "member";
-  if (!isStaffRole(normalized)) return null;
+  if (!showMember && !isStaffRole(normalized)) return null;
 
   const labelKey = memberRoleLabelKey(normalized);
   const label = t.members[labelKey];

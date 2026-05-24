@@ -1,3 +1,4 @@
+import { wbnClub, wbnMembers } from "@/lib/mock-data/clubs/wbn";
 import type {
   CarEvent,
   CarShop,
@@ -443,6 +444,7 @@ export const mockClubs: Club[] = [
     lat: 50.3356,
     lng: 6.9475,
   },
+  wbnClub,
 ];
 
 export const mockClubMembers: ClubMember[] = [
@@ -605,6 +607,7 @@ export const mockClubMembers: ClubMember[] = [
     lat: 50.112,
     lng: 8.685,
   },
+  ...wbnMembers,
 ];
 
 export const mockSubmissionsSeed: Submission[] = [

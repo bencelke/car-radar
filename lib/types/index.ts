@@ -16,6 +16,7 @@ export type {
   Submission,
   SubmissionStatus,
   SubmissionType,
+  ProfileImageFields,
   UserProfile,
   UserRole,
 } from "./domain";

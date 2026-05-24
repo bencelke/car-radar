@@ -33,7 +33,59 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Optional: copy `.env.example` to `.env.local` and add Firebase or Mapbox keys when you connect those services. The app runs without them using mock data.
+### ShiftIt brand assets
+
+User-facing branding uses **ShiftIt** / **ShiftIt.club** (`lib/config/brand.ts`). Internal package and repo name remain **CarRadar**.
+
+| Asset | Path |
+|-------|------|
+| Source (design) | `Logo/shiftit-dark.png` |
+| PNG (fallback) | `public/brand/shiftit-dark.png` |
+| Hero WebP (~1100px) | `public/brand/shiftit-logo.webp` |
+| Nav WebP (~220px) | `public/brand/shiftit-logo-small.webp` |
+
+Regenerate WebP after updating the source PNG:
+
+```bash
+npm run dev:optimize-brand
+```
+
+Replace with a final vector/SVG logo when available. Login: `/login` (email/password via Firebase Auth).
+
+### Local environment setup
+
+1. In the project root, create **`.env.local`** (it is not in git — see `.gitignore`).
+2. Copy the variable names from **`.env.example`** into `.env.local`.
+3. In [Firebase Console](https://console.firebase.google.com/) → your project → **Project settings** → **Your apps** → Web app → copy the **Firebase SDK** config values into the matching `NEXT_PUBLIC_FIREBASE_*` keys (do not paste config into source files).
+4. Optional: add a [Mapbox](https://account.mapbox.com/) access token as `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` for `/map`.
+5. **Restart** the dev server after any env change: stop `npm run dev`, then run it again.
+
+**Never commit `.env.local`.** Only `.env.example` (empty placeholders) belongs in the repo.
+
+| Variable | Required for Firebase mode |
+|----------|---------------------------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Yes |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes |
+| `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | No (map fallback without it) |
+
+If any required Firebase variable is missing or empty, `lib/firebase/client.ts` skips initialization and the app keeps using mock/local fallbacks. See [docs/firebase-setup.md](docs/firebase-setup.md) for Auth, Firestore, and first admin steps.
+
+### Dev admin test user (Admin SDK script)
+
+Firestore cannot create email/password logins. For local development, use a **service account** and:
+
+```bash
+npm run dev:check-env
+npm run dev:create-admin
+```
+
+Save the service account JSON as `secrets/firebase-service-account.json` (gitignored). Full steps: [docs/firebase-admin-dev-setup.md](docs/firebase-admin-dev-setup.md).
+
+Default dev login: `test@test.com` / `123456` — **change or delete before production.**
 
 ### Submit flow (`/submit`)
 
@@ -55,15 +107,16 @@ In development, if Firebase is not configured, `/submit` shows a small note that
 
 ### First admin setup (Firebase)
 
-1. Create a Firebase project and enable **Email/Password** authentication.
-2. Add all `NEXT_PUBLIC_FIREBASE_*` variables to `.env.local` (see `.env.example`).
-3. Run the app, open `/admin`, and **Sign up** / **Sign in** with your email.
-4. In [Firebase Console](https://console.firebase.google.com) → **Firestore** → collection `users` → document `{your-uid}`:
-   - Set `role` to `admin`
-   - Set `isAdmin` to `true`
-5. Refresh `/admin` — the review and CSV import dashboard should load.
+Full guide: [docs/firebase-setup.md](docs/firebase-setup.md)
 
-Do not hardcode admin emails in the codebase. Use Firestore for role assignment.
+1. Add all six `NEXT_PUBLIC_FIREBASE_*` variables to `.env.local` (copy from `.env.example` — **never commit** `.env.local`).
+2. Firebase Console → enable **Authentication → Email/Password** and create **Firestore**.
+3. `npm run dev` → open `/admin` → **Sign up** with your email.
+4. Firestore → `users` → `{your-uid}` — confirm auto-created doc (`role: "user"`, `isAdmin: false`).
+5. Set `role` = `"admin"` and `isAdmin` = `true` in the Console (manual promotion only).
+6. Click **Refresh access** on `/admin` or reload — dashboard unlocks.
+
+Do not hardcode admin emails in code. Do not put service account keys in the frontend.
 
 ### Deploy Firestore security rules
 
@@ -154,6 +207,147 @@ Shareable, SEO-friendly pages for discovery via Google, Instagram DMs, and direc
 - List cards on `/shops`, `/events`, `/clubs`, `/members` and the map detail panel link to these routes.
 - City pages aggregate approved shops, clubs, events, members, and community zones for local SEO.
 
+## Profile image upload
+
+Signed-in users can upload a profile photo at [`/profile`](http://localhost:3000/profile). Images are **optimized in the browser** before upload (not sent raw).
+
+| Requirement | Details |
+|-------------|---------|
+| Firebase Auth | All six `NEXT_PUBLIC_FIREBASE_*` vars |
+| Firebase Storage | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` must be set |
+| Storage path | `profile-images/{user\|member}/{id}/profile.webp` |
+| Firestore | `avatarUrl`, `imageUrl`, `imageStoragePath`, `imageUpdatedAt`, `imageSizeBytes`, `imageContentType` only — **no base64** |
+
+**Test:** sign in → `/profile` → select a ~1.6 MB JPEG → **Optimize & Upload** → confirm smaller size + progress → refresh → image shows.
+
+Admins can upload member car photos on member detail pages (`EditableMemberImagePanel`).
+
+**Local member image save (dev only):**
+
+1. `npm run dev` → open `/members/wbn-bambam-84`
+2. Use **Local image optimizer** → select a large JPEG → **Save optimized image locally**
+3. File is written to `public/data/clubs/wbn/images/wbn-bambam-84.webp`
+4. `npm run check:wbn-images` → refresh `/clubs/wbn` or the member page
+
+Works only in development. Production uses Firebase Storage (see `docs/image-optimization.md`).
+
+**Club cover image (dev):**
+
+1. `npm run dev`
+2. Open `/clubs/wbn`
+3. Expand **Club admin tools** (sidebar)
+4. Upload a cover JPEG → **Save cover locally**
+5. Confirm `public/data/clubs/wbn/cover.webp` exists
+6. Refresh `/clubs/wbn` and `/clubs` (WBN card uses cover when present)
+
+Club text edits persist only when Firebase is configured and you are admin; otherwise edit `public/data/clubs/wbn/wbn.json`.
+
+**Manual member photo test (admin, Firebase configured):**
+
+1. Configure Firebase Auth + Firestore + Storage.
+2. Promote your user to admin in `users/{uid}`.
+3. `npm run dev` → sign in → open `/members/wbn-masy-m4`.
+4. Select a ~1.6 MB JPEG in **Admin image upload** → **Optimize & Upload**.
+5. Confirm Storage: `profile-images/member/wbn-masy-m4/profile.webp`
+6. Confirm Firestore: `club_members/wbn-masy-m4` with `imageUrl` / `avatarUrl` only (no binary).
+7. Image updates immediately on the profile; refresh `/clubs/wbn` to see the card photo.
+
+See [docs/image-optimization.md](docs/image-optimization.md).
+
+## Google Sheets club member export
+
+For clubs with many members, use the **Google Apps Script** exporter (bulk rows + car photos from the Photo column):
+
+- Script (copy into Sheets): [`scripts/google-sheets/export-club-members-appscript.js`](scripts/google-sheets/export-club-members-appscript.js)
+- Guide: [`docs/google-sheets-club-export.md`](docs/google-sheets-club-export.md)
+
+Sheet columns: **Instagram · Car Model · Photo · Location**. Exports JSON/CSV and images to Drive under `CarRadar Exports/{clubId}/`. Imported images should still be optimized (WebP, ≤100 KB) before production — see [`scripts/optimize-images/README.md`](scripts/optimize-images/README.md).
+
+This script is **not** part of the Next.js build; it runs only inside Google Sheets.
+
+## Admin club import wizard
+
+**Admin → Club import** builds a club + members from CSV (upload, paste, or public Google Sheets CSV export URL).
+
+1. `npm run dev` → `/admin` → **Club import**
+2. Enter club details (ID, name, city, country, …)
+3. Paste or upload CSV with columns: `Instagram`, `Car Model`, `Photo`, `Location`
+4. **Preview members** → **Download club JSON** and/or **Save club JSON locally** (dev)
+5. Optional: **Import into local session** — visible on `/clubs` and `/members` until dev server restart
+
+| Output | Path |
+|--------|------|
+| Club JSON | `public/data/clubs/{clubId}/{clubId}.json` |
+| Member images (later) | `public/data/clubs/{clubId}/images/{memberId}.webp` |
+| Club cover (later) | `public/data/clubs/{clubId}/cover.webp` |
+
+**Embedded Sheet images** do not export via CSV — use the [Apps Script exporter](docs/google-sheets-club-export.md) or upload photos per member on the club/member admin tools.
+
+Guide: [docs/club-json-import.md](docs/club-json-import.md)
+
+## Firestore clubs & members
+
+When Firebase is configured, **Firestore is the source of truth** for `clubs` and `club_members`. Local WBN JSON remains a fallback when Firestore is empty.
+
+| Action | Where |
+|--------|--------|
+| CSV/Sheets → Firestore | `/admin` → **Club import** → Preview → **Import to Firestore** |
+| WBN seed → Firestore | `/admin` → **Firestore data** → **Import WBN local seed** |
+| Manual club/member | `/admin` → **Firestore data** |
+
+- Image fields store **URLs/paths only** (no binary in Firestore).
+- Members are **claim-ready** (`claimStatus: unclaimed`) — claiming flow is future work.
+- Deploy rules: `firebase deploy --only firestore:rules,storage`
+
+Docs: [docs/firebase-data-import.md](docs/firebase-data-import.md) · [docs/firestore-schema.md](docs/firestore-schema.md)
+
+## Real club seed data (WBN)
+
+Local JSON seeds real club and member profiles from a Google Sheet (columns: Instagram, Car Model, Photo, Location). No Instagram scraping.
+
+| Item | Path |
+|------|------|
+| Source JSON | `public/data/clubs/wbn/wbn.json` |
+| Loader | `lib/mock-data/clubs/wbn.ts` → `lib/mock-data/seeds.ts` |
+| Member photos | `public/data/clubs/wbn/images/` |
+
+### WBN image file names
+
+Place one optimized photo per member in `public/data/clubs/wbn/images/`:
+
+- `wbn-bambam-84.webp`
+- `wbn-die-bimmerboys.webp`
+- `wbn-pecke-r56.webp`
+- `wbn-her-rallyeredfk8.webp`
+- `wbn-larissa-s5.webp`
+- `wbn-masy-m4.webp`
+- `wbn-pod-racer.webp`
+- `wbn-smoked-m4.webp`
+- `wbn-stefan-m346.webp`
+- `wbn-ugurcan-m4.webp`
+- `wbn-unbegrenzt335.webp`
+
+Guidelines:
+
+- **≤ 100 KB** per file, **`.webp`** preferred (see `docs/image-optimization.md`)
+- JSON stores only paths (`imageUrl` / `avatarUrl`), e.g. `/data/clubs/wbn/images/wbn-masy-m4.webp`
+- **Do not** store image binaries in Firestore
+- Missing files are OK in dev — UI uses a gradient fallback
+
+Check which files exist (lists found/missing filenames and % complete):
+
+```bash
+npm run check:wbn-images
+```
+
+Image folder readme: `public/data/clubs/wbn/images/README.md`
+
+### WBN member fields
+
+Each row uses the Instagram column as `instagramHandle` (no `@`), `displayName` as `@handle`, and `instagram` as `https://instagram.com/{handle}`. Car model text is stored in `carName` with parsed `carMake` / `carModel`.
+
+Routes: `/clubs/wbn`, `/members`, `/members/wbn-masy-m4`, `/map` (pan to Wiesbaden or search **WBN** / **Wiesbaden**).
+
 ## Project structure
 
 ```
@@ -163,9 +357,10 @@ lib/
   config/         # Brand and theme config
   data/           # Dashboard data loaders
   firebase/       # Optional Firebase client
-  mock-data/      # Seed data for mock mode
+  mock-data/      # Seed data for mock mode (includes clubs/wbn loader)
   repositories/   # Data access (Firestore + mock fallback)
   types/          # Domain and UI types
+public/data/      # Local club JSON + image paths (WBN)
 docs/             # Firestore schema notes
 scripts/          # Seed script placeholder
 ```

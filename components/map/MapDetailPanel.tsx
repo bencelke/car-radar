@@ -18,7 +18,11 @@ import { cn } from "@/lib/utils";
 type MapDetailPanelProps = {
   item: MapItem | null;
   className?: string;
+  variant?: "default" | "floating";
 };
+
+const floatingPanelClass =
+  "border-white/10 bg-[#05070a]/85 shadow-[0_12px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl";
 
 function typeLabel(
   item: MapItem,
@@ -59,14 +63,23 @@ function formatEventTime(iso?: string): string | null {
   });
 }
 
-export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
+export function MapDetailPanel({
+  item,
+  className,
+  variant = "default",
+}: MapDetailPanelProps) {
   const { t } = useLocale();
+  const isFloating = variant === "floating";
+  const panelExtras = isFloating ? floatingPanelClass : undefined;
+  const emptyMinH = isFloating ? "min-h-[160px]" : "min-h-[200px] lg:min-h-0 lg:w-80";
 
   if (!item) {
     return (
       <GlassPanel
         className={cn(
-          "flex min-h-[200px] flex-col items-center justify-center p-6 text-center lg:min-h-0 lg:w-80",
+          "flex flex-col items-center justify-center p-6 text-center",
+          emptyMinH,
+          panelExtras,
           className
         )}
       >
@@ -80,7 +93,9 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
     return (
       <GlassPanel
         className={cn(
-          "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5 lg:w-80 lg:shrink-0",
+          "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5",
+          !isFloating && "lg:w-80 lg:shrink-0",
+          panelExtras,
           className
         )}
       >
@@ -114,7 +129,9 @@ export function MapDetailPanel({ item, className }: MapDetailPanelProps) {
   return (
     <GlassPanel
       className={cn(
-        "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5 lg:w-80 lg:shrink-0",
+        "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5",
+        !isFloating && "lg:w-80 lg:shrink-0",
+        panelExtras,
         className
       )}
     >

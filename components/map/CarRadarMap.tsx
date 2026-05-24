@@ -289,7 +289,7 @@ export function CarRadarMap({
                   12,
                   55,
                 ],
-                "circle-color": "rgba(250, 204, 21, 0.14)",
+                "circle-color": "rgba(250, 204, 21, 0.08)",
                 "circle-stroke-width": 0,
               },
             });
@@ -309,7 +309,7 @@ export function CarRadarMap({
                 ],
                 "circle-color": "transparent",
                 "circle-stroke-color": MARKER_STYLES.zone.border,
-                "circle-stroke-width": 2,
+                "circle-stroke-width": 1.5,
                 "circle-opacity": 0.95,
               },
             });

@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { ClubImportWizard } from "@/components/admin/ClubImportWizard";
 import { CsvImportPanel } from "@/components/admin/CsvImportPanel";
+import { FirestoreDataPanel } from "@/components/admin/FirestoreDataPanel";
 import { SubmissionReviewPanel } from "@/components/admin/SubmissionReviewPanel";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { Submission } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type AdminTab = "review" | "import";
+type AdminTab = "review" | "import" | "clubImport" | "firestore";
 
 type AdminWorkspaceProps = {
   initialSubmissions: Submission[];
@@ -27,6 +29,8 @@ export function AdminWorkspace({
   const tabs: { id: AdminTab; label: string; badge?: number }[] = [
     { id: "review", label: t.admin.tabReview, badge: pendingCount },
     { id: "import", label: t.admin.tabImport },
+    { id: "clubImport", label: t.admin.tabClubImport },
+    { id: "firestore", label: t.admin.tabFirestoreData },
   ];
 
   return (
@@ -56,8 +60,12 @@ export function AdminWorkspace({
 
       {tab === "review" ? (
         <SubmissionReviewPanel initialSubmissions={initialSubmissions} />
-      ) : (
+      ) : tab === "import" ? (
         <CsvImportPanel onImported={() => router.refresh()} />
+      ) : tab === "clubImport" ? (
+        <ClubImportWizard />
+      ) : (
+        <FirestoreDataPanel />
       )}
     </>
   );

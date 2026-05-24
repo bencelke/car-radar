@@ -219,16 +219,16 @@ export const MARKER_STYLES: Record<
     iconColor: "#60A5FA",
   },
   member: {
-    border: "#22C55E",
-    glow: "rgba(34,197,94,0.7)",
+    border: "#38BDF8",
+    glow: "rgba(56,189,248,0.75)",
     bg: "#0B1118",
-    iconColor: "#4ADE80",
+    iconColor: "#7DD3FC",
   },
   zone: {
-    border: "#FACC15",
-    glow: "rgba(250,204,21,0.55)",
+    border: "rgba(250,204,21,0.45)",
+    glow: "rgba(250,204,21,0.28)",
     bg: "#111827",
-    iconColor: "#FDE047",
+    iconColor: "rgba(253,224,71,0.85)",
   },
 };
 

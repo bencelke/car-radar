@@ -14,10 +14,12 @@ const firebaseConfig = {
 
 function hasRequiredFirebaseEnv(): boolean {
   return Boolean(
-    firebaseConfig.apiKey &&
-      firebaseConfig.authDomain &&
-      firebaseConfig.projectId &&
-      firebaseConfig.appId
+    firebaseConfig.apiKey?.trim() &&
+      firebaseConfig.authDomain?.trim() &&
+      firebaseConfig.projectId?.trim() &&
+      firebaseConfig.storageBucket?.trim() &&
+      firebaseConfig.messagingSenderId?.trim() &&
+      firebaseConfig.appId?.trim()
   );
 }
 
@@ -35,7 +37,10 @@ if (isFirebaseConfigured) {
     auth = getAuth(app);
     storage = getStorage(app);
   } catch (error) {
-    console.warn("[CarRadar] Firebase initialization failed; using mock mode.", error);
+    console.warn("[CarRadar] Firebase initialization failed; using mock mode.");
+    if (process.env.NODE_ENV === "development" && error instanceof Error) {
+      console.warn("[CarRadar]", error.message);
+    }
     app = null;
     db = null;
     auth = null;
@@ -44,6 +49,10 @@ if (isFirebaseConfigured) {
 }
 
 export { app, auth, db, storage };
+
+export const isAuthAvailable = auth !== null;
+export const isFirestoreAvailable = db !== null;
+export const isStorageAvailable = storage !== null;
 
 export function getFirebaseMode(): "firebase" | "mock" {
   return db ? "firebase" : "mock";

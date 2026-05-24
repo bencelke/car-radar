@@ -182,6 +182,7 @@ export async function loadMapItems(): Promise<MapItem[]> {
       metadata: {
         entityId: member.id,
         displayName: member.displayName,
+        instagramHandle: member.instagramHandle ?? "",
         nickname: member.nickname ?? "",
         carMake: member.carMake ?? "",
         carModel: member.carModel ?? "",
@@ -194,6 +195,7 @@ export async function loadMapItems(): Promise<MapItem[]> {
         clubSlug: club?.slug ?? "",
         role: member.role ?? "member",
         avatarUrl: member.avatarUrl ?? member.imageUrl ?? "",
+        imageUrl: member.imageUrl ?? member.avatarUrl ?? "",
         statusLabel: member.verifiedByClub ? "Club verified" : "",
       },
     });

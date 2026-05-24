@@ -79,14 +79,24 @@ Documents map to `Club`.
 | `tiktok` | string? | |
 | `youtube` | string? | |
 | `website` | string? | |
-| `imageUrl` | string? | |
-| `logoUrl` | string? | |
+| `imageUrl` | string? | URL or path only — not binary; use Firebase Storage or `public/` paths in dev |
+| `coverImageUrl` | string? | Club cover hero |
+| `logoUrl` | string? | Club logo |
+| `shortDescription` | string? | |
+| `vehicleTypes` | string[]? | |
+| `primaryBrands` | string[]? | |
+| `joinRequirements` | string? | |
+| `meetingStyle` | string? | |
 | `memberCount` | number? | |
 | `verified` | boolean | |
 | `featured` | boolean? | |
 | `tags` | string[]? | |
+| `lat` | number? | Club map pin (static, not live GPS) |
+| `lng` | number? | |
 | `createdAt` | string (ISO) | |
 | `updatedAt` | string (ISO) | |
+| `createdByUid` | string? | Admin who imported/created |
+| `updatedByUid` | string? | Last admin editor |
 
 ## `club_members`
 
@@ -107,11 +117,12 @@ Documents map to `ClubMember`.
 | `carName` | string? | |
 | `buildSummary` | string? | |
 | `buildTags` | string[]? | |
-| `instagram` | string? | External link only — no scraping |
+| `instagramHandle` | string? | Bare username, no `@`; display as `@handle` in UI |
+| `instagram` | string? | `https://instagram.com/{handle}` — external link only, no scraping |
 | `tiktok` | string? | |
 | `youtube` | string? | |
-| `imageUrl` | string? | Optional submitted image |
-| `avatarUrl` | string? | Optional avatar (same as imageUrl if set) |
+| `imageUrl` | string? | URL or site path only (e.g. `/data/clubs/wbn/images/{id}.webp`) — not binary; files live in `public/` locally or Firebase Storage later |
+| `avatarUrl` | string? | Same as `imageUrl` when set; external link only for socials — no Instagram scraping |
 | `clubName` | string? | Denormalized display |
 | `role` | string? | `member` \| `club_owner` \| `club_admin` \| `founder` \| `road_captain` \| `photographer` |
 | `roleLabel` | string? | Optional custom label override |
@@ -119,8 +130,14 @@ Documents map to `ClubMember`.
 | `lng` | number? | Map pin |
 | `verifiedByClub` | boolean? | |
 | `featured` | boolean? | |
+| `claimStatus` | string? | `unclaimed` \| `pending` \| `claimed` \| `rejected` — claim flow not in UI yet |
+| `claimedByUid` | string? \| null | Firebase Auth uid after claim approved |
 | `createdAt` | string (ISO) | |
 | `updatedAt` | string (ISO) | |
+| `createdByUid` | string? | Admin importer |
+| `updatedByUid` | string? | Last editor |
+
+Member profiles are **public listings** and do not require a `users` document. A signed-in user may claim a profile later (see [firebase-data-import.md](./firebase-data-import.md)).
 
 ## `communities` (legacy)
 

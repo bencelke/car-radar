@@ -102,6 +102,13 @@ export type Community = {
 
 export type ClubMemberStatus = "pending" | "approved" | "rejected" | "archived";
 
+/** Profile claim by a signed-in Firebase user (flow not implemented yet). */
+export type MemberClaimStatus =
+  | "unclaimed"
+  | "pending"
+  | "claimed"
+  | "rejected";
+
 export type MemberRole =
   | "member"
   | "club_owner"
@@ -121,21 +128,32 @@ export type Club = {
   country: string;
   area?: string;
   description: string;
+  shortDescription?: string;
   instagram?: string;
   tiktok?: string;
   youtube?: string;
   website?: string;
   imageUrl?: string;
   logoUrl?: string;
+  coverImageUrl?: string;
   memberCount?: number;
   verified: boolean;
   featured?: boolean;
   tags?: string[];
   lat?: number;
   lng?: number;
+  vehicleTypes?: string[];
+  joinRequirements?: string;
+  meetingStyle?: string;
+  primaryBrands?: string[];
+  foundedYear?: string;
+  ownerName?: string;
+  contactInstagram?: string;
   createdAt?: string;
   updatedAt?: string;
   sourceSubmissionId?: string;
+  createdByUid?: string;
+  updatedByUid?: string;
 };
 
 export type ClubMember = {
@@ -156,18 +174,28 @@ export type ClubMember = {
   carName?: string;
   buildSummary?: string;
   buildTags?: string[];
+  /** Bare Instagram username — no @ prefix; use formatMemberHandleLabel() in UI */
+  instagramHandle?: string;
   instagram?: string;
   tiktok?: string;
   youtube?: string;
   imageUrl?: string;
   avatarUrl?: string;
+  imageStoragePath?: string;
+  imageUpdatedAt?: string;
+  imageSizeBytes?: number;
+  imageContentType?: string;
   role?: MemberRole;
   roleLabel?: string;
   verifiedByClub?: boolean;
   featured?: boolean;
+  claimStatus?: MemberClaimStatus;
+  claimedByUid?: string | null;
   createdAt?: string;
   updatedAt?: string;
   sourceSubmissionId?: string;
+  createdByUid?: string;
+  updatedByUid?: string;
 };
 
 export type CommunityZone = {
@@ -274,10 +302,24 @@ export type CreateSubmissionInput = Omit<
 
 export type UserRole = "admin" | "user";
 
+/** Image metadata only — binary lives in Firebase Storage */
+export type ProfileImageFields = {
+  avatarUrl?: string;
+  imageUrl?: string;
+  imageStoragePath?: string;
+  imageUpdatedAt?: string;
+  imageSizeBytes?: number;
+  imageContentType?: string;
+};
+
 export type UserProfile = {
+  uid?: string;
   email: string;
+  displayName?: string;
+  photoURL?: string;
   role: UserRole;
   isAdmin?: boolean;
   createdAt?: string;
   updatedAt?: string;
-};
+  lastLoginAt?: string;
+} & ProfileImageFields;

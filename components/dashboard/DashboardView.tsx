@@ -1,21 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { ClubAreasPanel } from "@/components/dashboard/ClubAreasPanel";
-import {
-  HowItsBuiltPanel,
-  MonetizationPanel,
-  ScaledPanel,
-  TechStackPanel,
-} from "@/components/dashboard/BuildStackPanel";
 import { CommunitiesPanel } from "@/components/dashboard/CommunitiesPanel";
 import { EventsPanel } from "@/components/dashboard/EventsPanel";
-import { FilterPanel } from "@/components/dashboard/FilterPanel";
 import { ShopsPanel } from "@/components/dashboard/ShopsPanel";
-import { SubmitPreviewPanel } from "@/components/dashboard/SubmitPreviewPanel";
-import { DashboardMapPreview } from "@/components/map/DashboardMapPreview";
-import { MapDetailPanel } from "@/components/map/MapDetailPanel";
+import { HomeMapHero } from "@/components/home/HomeMapHero";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import type { DashboardData } from "@/lib/data/dashboard";
 import { filterMapItems, sortMapItems } from "@/lib/map/map-utils";
 import type { MapCategoryFilterId, MapFilterId, MapItem, MapSortId } from "@/lib/types";
@@ -31,6 +23,8 @@ export function DashboardView({
   mapItems,
   selectedPlaceId: defaultPlaceId,
 }: DashboardViewProps) {
+  const { t } = useLocale();
+  const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<MapFilterId>("all");
   const [categoryFilter, setCategoryFilter] =
     useState<MapCategoryFilterId>("all");
@@ -43,9 +37,13 @@ export function DashboardView({
   );
 
   const visibleItems = useMemo(() => {
-    const filtered = filterMapItems(mapItems, { typeFilter, categoryFilter });
+    const filtered = filterMapItems(mapItems, {
+      typeFilter,
+      categoryFilter,
+      search,
+    });
     return sortMapItems(filtered, sortMode);
-  }, [mapItems, typeFilter, categoryFilter, sortMode]);
+  }, [mapItems, typeFilter, categoryFilter, sortMode, search]);
 
   const selectedItem = useMemo(() => {
     if (!selectedMapItemId) return null;
@@ -56,59 +54,79 @@ export function DashboardView({
     );
   }, [selectedMapItemId, visibleItems, mapItems]);
 
-  const handleMapItemSelect = (item: MapItem) => {
+  const handleMapItemSelect = useCallback((item: MapItem) => {
     setSelectedMapItemId(item.id);
     if (item.id.startsWith("shop-")) {
       setSelectedPinId(item.id.replace(/^shop-/, ""));
     }
-  };
+  }, []);
 
-  const handlePinSelect = (id: string) => {
+  const handlePinSelect = useCallback((id: string) => {
     setSelectedPinId(id);
     setSelectedMapItemId(`shop-${id}`);
-  };
+  }, []);
+
+  const onPulseThisWeekend = useCallback(() => {
+    setTypeFilter("event");
+    const event = mapItems.find((i) => i.type === "event");
+    if (event) handleMapItemSelect(event);
+  }, [mapItems, handleMapItemSelect]);
+
+  const onPulseNewShops = useCallback(() => {
+    setTypeFilter("shop");
+    const shop = mapItems.find((i) => i.type === "shop");
+    if (shop) handleMapItemSelect(shop);
+  }, [mapItems, handleMapItemSelect]);
+
+  const onPulseFeaturedClubs = useCallback(() => {
+    setTypeFilter("club");
+    const club = mapItems.find((i) => i.type === "club");
+    if (club) handleMapItemSelect(club);
+  }, [mapItems, handleMapItemSelect]);
+
+  const onPulseActiveMembers = useCallback(() => {
+    setTypeFilter("member");
+    const member = mapItems.find((i) => i.type === "member");
+    if (member) handleMapItemSelect(member);
+  }, [mapItems, handleMapItemSelect]);
 
   return (
-    <div className="mx-auto w-full max-w-[1920px] flex-1 px-4 py-4 lg:px-6 lg:py-5">
-      <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
-        <aside className="order-2 xl:order-1 xl:sticky xl:top-[4.5rem] xl:self-start">
-          <FilterPanel
-            typeFilter={typeFilter}
-            onTypeFilterChange={setTypeFilter}
-            categoryFilter={categoryFilter}
-            onCategoryFilterChange={setCategoryFilter}
-            sortMode={sortMode}
-            onSortChange={setSortMode}
-          />
-        </aside>
+    <div className="flex flex-col">
+      <HomeMapHero
+        visibleItems={visibleItems}
+        mapItems={mapItems}
+        selectedMapItemId={selectedMapItemId}
+        onMapItemSelect={handleMapItemSelect}
+        selectedItem={selectedItem}
+        mapPins={mapPins}
+        selectedPinId={selectedPinId}
+        onPinSelect={handlePinSelect}
+        search={search}
+        onSearchChange={setSearch}
+        typeFilter={typeFilter}
+        onTypeFilterChange={setTypeFilter}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        sortMode={sortMode}
+        onSortChange={setSortMode}
+        events={events}
+        shopCount={shops.length}
+        communities={communities}
+        onPulseThisWeekend={onPulseThisWeekend}
+        onPulseNewShops={onPulseNewShops}
+        onPulseFeaturedClubs={onPulseFeaturedClubs}
+        onPulseActiveMembers={onPulseActiveMembers}
+      />
 
-        <section className="order-1 min-w-0 xl:order-2">
-          <DashboardMapPreview
-            visibleItems={visibleItems}
-            selectedMapItemId={selectedMapItemId}
-            onMapItemSelect={handleMapItemSelect}
-            mapPins={mapPins}
-            selectedPinId={selectedPinId}
-            onPinSelect={handlePinSelect}
-          />
-        </section>
-
-        <aside className="order-3 xl:sticky xl:top-[4.5rem] xl:self-start">
-          <MapDetailPanel item={selectedItem} />
-        </aside>
-      </div>
-
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        <EventsPanel events={events} />
-        <ShopsPanel shops={shops} />
-        <CommunitiesPanel communities={communities} />
-        <ClubAreasPanel clubAreas={clubAreas} />
-        <SubmitPreviewPanel />
-        <HowItsBuiltPanel />
-        <ScaledPanel />
-        <TechStackPanel />
-        <div className="md:col-span-2 xl:col-span-1 2xl:col-span-2">
-          <MonetizationPanel />
+      <div className="mx-auto w-full max-w-[1920px] flex-1 px-4 py-8 lg:px-6">
+        <h2 className="mb-4 font-heading text-xl font-bold tracking-tight text-[#F8FAFC]">
+          {t.home.exploreScene}
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <EventsPanel events={events} />
+          <ShopsPanel shops={shops} />
+          <CommunitiesPanel communities={communities} />
+          <ClubAreasPanel clubAreas={clubAreas} />
         </div>
       </div>
     </div>

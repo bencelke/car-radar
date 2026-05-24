@@ -33,12 +33,28 @@ yarn-error.log*
 # env / secrets (never commit real keys)
 .env
 .env.local
-.env.*.local
+.env*.local
 .env.development.local
 .env.test.local
 .env.production.local
 .env*
 !.env.example
+env.local.txt
+env*.txt
+
+# Firebase Admin SDK service account (local dev scripts only)
+serviceAccountKey.json
+firebase-service-account.json
+service-account*.json
+secrets/
+*.service-account.json
+*.private-key.json
+
+# raw / local-only assets
+Logo/
+raw-images/
+public/brand/shiftit-dark.png
+*.log
 
 # vercel
 .vercel

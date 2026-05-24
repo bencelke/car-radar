@@ -38,22 +38,30 @@ service cloud.firestore {
         && (!('reviewedAt' in request.resource.data) || request.resource.data.reviewedAt == null);
     }
 
-    match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-
-      allow create: if isOwner(userId)
+    function userCreateAllowed() {
+      return isOwner(userId)
         && request.resource.data.email is string
-        && request.resource.data.role == 'user'
+        && (
+          !('role' in request.resource.data)
+          || request.resource.data.role == 'user'
+        )
         && (
           !('isAdmin' in request.resource.data)
           || request.resource.data.isAdmin == false
         );
+    }
 
-      allow update: if isAdmin()
-        || (
-          isOwner(userId)
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin'])
-        );
+    function userSelfUpdateAllowed() {
+      return isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin']);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow create: if userCreateAllowed();
+
+      allow update: if isAdmin() || userSelfUpdateAllowed();
 
       allow delete: if isAdmin();
     }
@@ -83,7 +91,28 @@ service cloud.firestore {
 
     match /club_members/{docId} {
       allow read: if resource.data.status == 'approved';
-      allow create, update, delete: if isAdmin();
+
+      allow create: if isAdmin()
+        && request.resource.data.status is string
+        && (
+          !('claimStatus' in request.resource.data)
+          || request.resource.data.claimStatus == 'unclaimed'
+          || request.resource.data.claimStatus == 'pending'
+        )
+        && (
+          !('claimedByUid' in request.resource.data)
+          || request.resource.data.claimedByUid == null
+        );
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.claimedByUid == request.auth.uid
+          && resource.data.claimStatus == 'claimed'
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['claimStatus', 'claimedByUid', 'status', 'clubId'])
+        );
+
+      allow delete: if isAdmin();
     }
 
     match /community_zones/{docId} {

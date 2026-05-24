@@ -3,6 +3,10 @@
 import { SocialLinks, type SocialLinkItem } from "@/components/detail/SocialLinks";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { ClubMember } from "@/lib/types";
+import {
+  formatMemberHandleLabel,
+  memberInstagramUrl,
+} from "@/lib/utils/instagram";
 
 type MemberSocialLinksProps = {
   member: ClubMember;
@@ -12,10 +16,11 @@ export function MemberSocialLinks({ member }: MemberSocialLinksProps) {
   const { t } = useLocale();
   const links: SocialLinkItem[] = [];
 
-  if (member.instagram) {
+  const instagramHref = memberInstagramUrl(member);
+  if (instagramHref) {
     links.push({
-      href: member.instagram,
-      label: t.members.instagram,
+      href: instagramHref,
+      label: formatMemberHandleLabel(member),
       kind: "instagram",
     });
   }

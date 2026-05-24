@@ -3,7 +3,7 @@ import { Inter, Rajdhani } from "next/font/google";
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
-import { TopNav } from "@/components/layout/TopNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { brand } from "@/lib/config/brand";
 
 import "./globals.css";
@@ -21,8 +21,8 @@ const rajdhani = Rajdhani({
 
 export const metadata: Metadata = {
   title: {
-    default: brand.appName,
-    template: `%s · ${brand.appName}`,
+    default: brand.metadata.title,
+    template: `%s · ${brand.metadata.siteName}`,
   },
   description: brand.description,
 };
@@ -40,8 +40,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-[#05070A] font-sans text-[#F8FAFC] antialiased">
         <LocaleProvider>
           <AuthProvider>
-            <TopNav />
-            <main className="flex flex-1 flex-col">{children}</main>
+            <AppShell>{children}</AppShell>
           </AuthProvider>
         </LocaleProvider>
       </body>

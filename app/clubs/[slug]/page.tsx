@@ -2,21 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ClubDetailHeader } from "@/components/clubs/ClubDetailHeader";
-import { ClubEventsSection } from "@/components/clubs/ClubEventsSection";
-import { ClubMembersSection } from "@/components/clubs/ClubMembersSection";
-import { ClubNearbyShopsSection } from "@/components/clubs/ClubNearbyShopsSection";
+import { ClubDetailView } from "@/components/clubs/ClubDetailView";
 import { PageShell } from "@/components/layout/PageShell";
-import { Button } from "@/components/ui/button";
 import { brand } from "@/lib/config/brand";
 import { getApprovedEvents } from "@/lib/repositories/events";
 import { getMembersByClubId } from "@/lib/repositories/club-members";
 import { getClubById, getClubBySlug } from "@/lib/repositories/clubs";
 import { getApprovedShops } from "@/lib/repositories/shops";
 import { getApprovedCommunityZones } from "@/lib/repositories/community-zones";
-import { CorrectionLink } from "@/components/detail/CorrectionLink";
-import { RelatedSection } from "@/components/detail/RelatedSection";
-import { RelatedEntityList } from "@/components/detail/RelatedEntityList";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -34,7 +27,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!club) return { title: "Club not found" };
   return {
     title: `${club.name} | Car Club in ${club.city} | ${brand.appName}`,
-    description: `${club.name} — ${club.type} in ${club.city}. ${club.description}`,
+    description:
+      club.shortDescription ??
+      `${club.name} — ${club.type} in ${club.city}. ${club.description}`,
   };
 }
 
@@ -64,53 +59,21 @@ export default async function ClubDetailPage({ params }: PageProps) {
   );
 
   return (
-    <PageShell className="space-y-6">
-      <ClubDetailHeader club={club} />
-      <ClubMembersSection club={club} members={members} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ClubEventsSection club={club} events={relatedEvents} />
-        <ClubNearbyShopsSection club={club} shops={nearbyShops} />
-      </div>
-      {clubZones.length > 0 ? (
-        <RelatedSection title="Club areas">
-          <RelatedEntityList
-            items={clubZones.map((zone) => ({
-              href: "/map",
-              title: zone.name,
-              subtitle: zone.description,
-            }))}
-          />
-        </RelatedSection>
-      ) : null}
-      <div className="flex flex-wrap gap-3">
-        <Button
-          nativeButton={false}
-          render={
-            <Link
-              href={`/submit?type=member&club=${encodeURIComponent(club.name)}`}
-            />
-          }
-          className="border border-[#EF4444]/50 bg-[#EF4444]/20 text-[#F8FAFC]"
+    <PageShell>
+      <nav className="mb-3">
+        <Link
+          href="/clubs"
+          className="inline-block text-xs font-medium text-[#3B82F6] hover:underline"
         >
-          Submit a member
-        </Button>
-        <Button
-          nativeButton={false}
-          variant="outline"
-          render={
-            <Link
-              href={`/submit?type=event&club=${encodeURIComponent(club.name)}`}
-            />
-          }
-          className="border-white/[0.08] bg-[#151B24]/60 text-[#CBD5E1]"
-        >
-          Submit an event for this club
-        </Button>
-      </div>
-      <CorrectionLink
-        targetType="club"
-        targetName={club.name}
-        entityId={club.id}
+          ← Clubs
+        </Link>
+      </nav>
+      <ClubDetailView
+        club={club}
+        members={members}
+        events={relatedEvents}
+        shops={nearbyShops}
+        zones={clubZones}
       />
     </PageShell>
   );

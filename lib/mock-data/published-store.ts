@@ -40,6 +40,14 @@ export function addPublishedMember(member: ClubMember): void {
   ];
 }
 
+/** Dev session: import a full club + members (until server restart). */
+export function importClubBundle(club: Club, members: ClubMember[]): void {
+  addPublishedClub({ ...club, memberCount: members.length });
+  for (const member of members) {
+    addPublishedMember(member);
+  }
+}
+
 export function resetPublishedEntities(): void {
   publishedShops = [];
   publishedEvents = [];

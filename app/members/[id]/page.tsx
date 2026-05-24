@@ -53,12 +53,14 @@ export default async function MemberDetailPage({ params }: PageProps) {
 
   return (
     <PageShell>
-      <Link
-        href="/members"
-        className="mb-4 inline-block text-xs text-[#3B82F6] hover:underline"
-      >
-        ← Members
-      </Link>
+      <nav className="mb-3">
+        <Link
+          href="/members"
+          className="inline-block text-xs font-medium text-[#3B82F6] hover:underline"
+        >
+          ← Members
+        </Link>
+      </nav>
       <MemberDetailView
         member={member}
         club={club}
