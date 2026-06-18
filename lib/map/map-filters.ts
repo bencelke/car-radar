@@ -9,7 +9,6 @@ export type MapFilterOption = {
 
 export const MAP_TYPE_FILTER_OPTIONS: MapFilterOption[] = [
   { id: "all", labelKey: "filterAll", typeFilter: "all" },
-  { id: "member", labelKey: "filterMembers", typeFilter: "member" },
   { id: "shop", labelKey: "filterShops", typeFilter: "shop" },
   { id: "event", labelKey: "filterEvents", typeFilter: "event" },
   { id: "club", labelKey: "filterClubs", typeFilter: "club" },
@@ -35,7 +34,7 @@ export function dashboardFilterToMapFilters(filterId: string): {
   switch (filterId) {
     case "members":
     case "member":
-      return { typeFilter: "member", categoryFilter: "all" };
+      return { typeFilter: "all", categoryFilter: "all" };
     case "shops":
     case "shop":
       return { typeFilter: "shop", categoryFilter: "all" };

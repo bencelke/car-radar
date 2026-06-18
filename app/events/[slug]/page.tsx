@@ -8,6 +8,8 @@ import { brand } from "@/lib/config/brand";
 import { getApprovedClubs } from "@/lib/repositories/clubs";
 import { getEventBySlug } from "@/lib/repositories/events";
 import { getApprovedShops } from "@/lib/repositories/shops";
+import { buildShareMetadata } from "@/lib/share/metadata";
+import { getEntitySlug } from "@/lib/utils/slug";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -21,10 +23,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const event = await resolveEvent(slug);
   if (!event) return { title: "Event not found" };
-  return {
+  return buildShareMetadata({
     title: `${event.title} | Car Meet in ${event.city} | ${brand.appName}`,
     description: `${event.title} in ${event.city}. ${event.description}`,
-  };
+    path: `/events/${getEntitySlug(event)}`,
+  });
 }
 
 export default async function EventDetailPage({ params }: PageProps) {

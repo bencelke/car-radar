@@ -19,6 +19,22 @@ service firebase.storage {
         );
     }
 
+    function clubDoc(clubId) {
+      return firestore.get(/databases/(default)/documents/clubs/$(clubId)).data;
+    }
+
+    function isClubManager(clubId) {
+      let club = clubDoc(clubId);
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/clubs/$(clubId))
+        && (
+          isAdmin()
+          || club.ownerUid == request.auth.uid
+          || ('adminUids' in club && request.auth.uid in club.adminUids)
+          || ('managerUids' in club && request.auth.uid in club.managerUids)
+        );
+    }
+
     function isImageUpload() {
       return request.resource != null
         && request.resource.size < 1024 * 1024
@@ -37,9 +53,35 @@ service firebase.storage {
       allow write: if isAdmin() && isImageUpload();
     }
 
+    match /member-images/{clubId}/{memberId}/{fileName} {
+      allow read: if true;
+      allow write: if isImageUpload()
+        && (isAdmin() || isClubManager(clubId));
+    }
+
     match /club-images/{clubId}/{fileName} {
       allow read: if true;
+      allow write: if isImageUpload()
+        && (isAdmin() || isClubManager(clubId));
+    }
+
+    match /event-images/{eventId}/{fileName} {
+      allow read: if true;
       allow write: if isAdmin() && isImageUpload();
+    }
+
+    match /announcement-images/{clubId}/{announcementId}/{fileName} {
+      allow read: if true;
+      allow write: if isImageUpload()
+        && (isAdmin() || isClubManager(clubId));
+    }
+
+    match /garage-images/{ownerUid}/{carId}/{fileName} {
+      allow read: if true;
+      allow write: if signedIn()
+        && request.auth.uid == ownerUid
+        && isImageUpload()
+        && request.resource.size < 512 * 1024;
     }
   }
 }

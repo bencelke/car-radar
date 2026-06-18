@@ -336,6 +336,8 @@ export function ProfileImageUploader({
         ownerId,
         fileExtension: ext,
         clubImageKind: isClub ? clubImageKind : undefined,
+        clubId: ownerType === "member" ? clubId : undefined,
+        memberId: ownerType === "member" ? (memberId ?? ownerId) : undefined,
         onProgress: setProgress,
       });
 

@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Rajdhani } from "next/font/google";
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { PostAuthRedirect } from "@/components/auth/PostAuthRedirect";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { brand } from "@/lib/config/brand";
@@ -27,6 +28,12 @@ export const metadata: Metadata = {
   description: brand.description,
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,6 +47,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-[#05070A] font-sans text-[#F8FAFC] antialiased">
         <LocaleProvider>
           <AuthProvider>
+            <PostAuthRedirect />
             <AppShell>{children}</AppShell>
           </AuthProvider>
         </LocaleProvider>

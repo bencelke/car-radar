@@ -1,13 +1,14 @@
 import imageCompression from "browser-image-compression";
 
+import {
+  getImagePreset,
+  type ImagePresetId,
+} from "@/lib/images/image-presets";
+
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_RAW_BYTES = 8 * 1024 * 1024;
 
-export type ProfileImageKind =
-  | "avatar"
-  | "member_car"
-  | "club_cover"
-  | "club_logo";
+export type ProfileImageKind = ImagePresetId | "avatar";
 
 export type OptimizeProfileImageOptions = {
   maxWidthOrHeight?: number;
@@ -19,35 +20,14 @@ export type OptimizeProfileImageOptions = {
 export function getOptimizeOptionsForKind(
   kind: ProfileImageKind
 ): OptimizeProfileImageOptions {
-  if (kind === "member_car") {
-    return {
-      kind: "member_car",
-      maxWidthOrHeight: 1200,
-      maxSizeMB: 0.22,
-      initialQuality: 0.78,
-    };
-  }
-  if (kind === "club_cover") {
-    return {
-      kind: "club_cover",
-      maxWidthOrHeight: 1600,
-      maxSizeMB: 0.45,
-      initialQuality: 0.78,
-    };
-  }
-  if (kind === "club_logo") {
-    return {
-      kind: "club_logo",
-      maxWidthOrHeight: 512,
-      maxSizeMB: 0.12,
-      initialQuality: 0.82,
-    };
-  }
+  const presetId =
+    kind === "avatar" ? "profile_avatar" : kind;
+  const preset = getImagePreset(presetId);
   return {
-    kind: "avatar",
-    maxWidthOrHeight: 900,
-    maxSizeMB: 0.18,
-    initialQuality: 0.78,
+    kind,
+    maxWidthOrHeight: preset.maxDimension,
+    maxSizeMB: preset.maxSizeMB,
+    initialQuality: preset.initialQuality,
   };
 }
 
@@ -123,7 +103,7 @@ export async function optimizeProfileImage(
     throw new Error("IMAGE_TOO_LARGE");
   }
 
-  const kind = options?.kind ?? "avatar";
+  const kind = options?.kind ?? "profile_avatar";
   const preset = getOptimizeOptionsForKind(kind);
   const opts: OptimizeProfileImageOptions = {
     ...preset,

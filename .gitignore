@@ -49,6 +49,7 @@ service-account*.json
 secrets/
 *.service-account.json
 *.private-key.json
+*.p8
 
 # raw / local-only assets
 Logo/

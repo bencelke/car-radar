@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { ClubAreasPanel } from "@/components/dashboard/ClubAreasPanel";
 import { CommunitiesPanel } from "@/components/dashboard/CommunitiesPanel";
@@ -24,6 +25,7 @@ export function DashboardView({
   selectedPlaceId: defaultPlaceId,
 }: DashboardViewProps) {
   const { t } = useLocale();
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<MapFilterId>("all");
   const [categoryFilter, setCategoryFilter] =
@@ -85,10 +87,8 @@ export function DashboardView({
   }, [mapItems, handleMapItemSelect]);
 
   const onPulseActiveMembers = useCallback(() => {
-    setTypeFilter("member");
-    const member = mapItems.find((i) => i.type === "member");
-    if (member) handleMapItemSelect(member);
-  }, [mapItems, handleMapItemSelect]);
+    router.push("/members");
+  }, [router]);
 
   return (
     <div className="flex flex-col">

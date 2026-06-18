@@ -6,7 +6,6 @@ import { useLocale } from "@/components/providers/LocaleProvider";
 import type { MapItemType } from "@/lib/types";
 
 const LEGEND_TYPES: MapItemType[] = [
-  "member",
   "shop",
   "event",
   "club",

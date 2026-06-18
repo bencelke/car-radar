@@ -5,11 +5,10 @@ import {
   resolveCityCoordinates,
 } from "@/lib/map/map-utils";
 import { getApprovedCommunityZones } from "@/lib/repositories/community-zones";
-import { getApprovedClubMembers } from "@/lib/repositories/club-members";
 import { getApprovedClubs } from "@/lib/repositories/clubs";
 import { getApprovedEvents } from "@/lib/repositories/events";
 import { getApprovedShops } from "@/lib/repositories/shops";
-import type { MapItem } from "@/lib/types";
+import type { CarEvent, MapItem } from "@/lib/types";
 
 function coordsFromRecord(
   lat?: number,
@@ -29,23 +28,16 @@ function coordsFromRecord(
   return base;
 }
 
+/** Public map markers — clubs, events, shops, zones only (no member cars). */
 export async function loadMapItems(): Promise<MapItem[]> {
-  const [clubs, members, shops, events, zones] = await Promise.all([
+  const [clubs, shops, events, zones] = await Promise.all([
     getApprovedClubs(),
-    getApprovedClubMembers(),
     getApprovedShops(),
     getApprovedEvents(),
     getApprovedCommunityZones(),
   ]);
 
   const clubById = new Map(clubs.map((c) => [c.id, c]));
-  const clubCoords = new Map(
-    clubs.map((c) => {
-      const coords = coordsFromRecord(c.lat, c.lng, c.city, c.area, c.id);
-      return [c.id, coords] as const;
-    })
-  );
-
   const items: MapItem[] = [];
 
   for (const shop of shops) {
@@ -89,7 +81,7 @@ export async function loadMapItems(): Promise<MapItem[]> {
       event.lat,
       event.lng,
       event.city,
-      undefined,
+      event.area,
       event.id
     );
     items.push({
@@ -99,6 +91,7 @@ export async function loadMapItems(): Promise<MapItem[]> {
       category: event.type,
       city: event.city,
       country: event.country,
+      area: event.area,
       lat,
       lng,
       description: event.description,
@@ -111,6 +104,10 @@ export async function loadMapItems(): Promise<MapItem[]> {
         startTime: event.startTime,
         endTime: event.endTime ?? "",
         interestedCount: event.interestedCount ?? 0,
+        goingCount: event.goingCount ?? 0,
+        clubId: event.clubId ?? "",
+        clubName: event.clubName ?? "",
+        cancelled: event.status === "cancelled",
         organizerName: event.organizerName ?? "",
         organizerInstagram: event.organizerInstagram ?? "",
       },
@@ -151,56 +148,6 @@ export async function loadMapItems(): Promise<MapItem[]> {
     });
   });
 
-  members.forEach((member, i) => {
-    const club = clubById.get(member.clubId);
-    const clubBase = clubCoords.get(member.clubId);
-    const fallback = resolveCityCoordinates(member.city, member.area);
-    const base = clubBase ?? fallback;
-    const { lat, lng } =
-      member.lat != null && member.lng != null
-        ? { lat: member.lat, lng: member.lng }
-        : offsetCoordinates(member.id, base.lat, base.lng, i + 5);
-    const carLine = [member.carYear, member.carMake, member.carModel]
-      .filter(Boolean)
-      .join(" ");
-    items.push({
-      id: `member-${member.id}`,
-      title: member.carName ?? member.nickname ?? member.displayName,
-      type: "member",
-      category: carLine || "Member build",
-      city: member.city,
-      country: member.country,
-      area: member.area,
-      lat,
-      lng,
-      description: member.buildSummary ?? "",
-      instagram: member.instagram,
-      verified: member.verifiedByClub,
-      featured: member.featured,
-      tags: member.buildTags,
-      createdAt: member.createdAt,
-      metadata: {
-        entityId: member.id,
-        displayName: member.displayName,
-        instagramHandle: member.instagramHandle ?? "",
-        nickname: member.nickname ?? "",
-        carMake: member.carMake ?? "",
-        carModel: member.carModel ?? "",
-        carYear: member.carYear ?? "",
-        carName: member.carName ?? "",
-        buildSummary: member.buildSummary ?? "",
-        buildTags: member.buildTags?.join(", ") ?? "",
-        clubId: member.clubId,
-        clubName: member.clubName ?? club?.name ?? "",
-        clubSlug: club?.slug ?? "",
-        role: member.role ?? "member",
-        avatarUrl: member.avatarUrl ?? member.imageUrl ?? "",
-        imageUrl: member.imageUrl ?? member.avatarUrl ?? "",
-        statusLabel: member.verifiedByClub ? "Club verified" : "",
-      },
-    });
-  });
-
   for (const zone of zones) {
     if (zone.centerLat == null || zone.centerLng == null) continue;
     const relatedClub = zone.communityId
@@ -228,4 +175,44 @@ export async function loadMapItems(): Promise<MapItem[]> {
   }
 
   return items;
+}
+
+export function eventsToMapItems(events: CarEvent[]): MapItem[] {
+  return events
+    .filter((e) => e.status === "approved")
+    .map((event, index) => {
+      const { lat, lng } = coordsFromRecord(
+        event.lat,
+        event.lng,
+        event.city,
+        event.area,
+        event.id,
+        index
+      );
+      return {
+        id: `event-${event.id}`,
+        title: event.title,
+        type: "event" as const,
+        category: event.type,
+        city: event.city,
+        country: event.country,
+        area: event.area,
+        lat,
+        lng,
+        description: event.description,
+        verified: event.verified,
+        featured: event.featured,
+        createdAt: event.createdAt ?? event.startTime,
+        metadata: {
+          entityId: event.id,
+          slug: getEntitySlug(event),
+          startTime: event.startTime,
+          endTime: event.endTime ?? "",
+          interestedCount: event.interestedCount ?? 0,
+          goingCount: event.goingCount ?? 0,
+          clubId: event.clubId ?? "",
+          clubName: event.clubName ?? "",
+        },
+      };
+    });
 }

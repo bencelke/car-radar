@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { MockMapPanel } from "@/components/dashboard/MockMapPanel";
@@ -9,11 +9,17 @@ import { ScenePulseStrip } from "@/components/home/ScenePulseStrip";
 import { CarRadarMap, type MapLoadStatus } from "@/components/map/CarRadarMap";
 import { MapDetailPanel } from "@/components/map/MapDetailPanel";
 import { MapFallback } from "@/components/map/MapFallback";
+import { MobileDetailSheet } from "@/components/mobile/MobileDetailSheet";
+import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
+import { MobileMapToolbar } from "@/components/mobile/MobileMapToolbar";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { countActiveMapFilters } from "@/lib/map/active-filter-count";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
   getMapboxToken,
   type MapErrorCategory,
 } from "@/lib/map/map-config";
+import { countMapItemsByType, searchMapItems } from "@/lib/map/map-utils";
 import type {
   CommunityItem,
   EventItem,
@@ -83,18 +89,69 @@ export function HomeMapHero({
   const [mapStatus, setMapStatus] = useState<MapLoadStatus>("loading");
   const [mapErrorCategory, setMapErrorCategory] =
     useState<MapErrorCategory>("unknown");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [closedDetailId, setClosedDetailId] = useState<string | null>(null);
+  const [layoutRevision, setLayoutRevision] = useState(0);
+  const isMobileLayout = useMediaQuery("(max-width: 1023px)");
+
+  const bumpLayout = useCallback(() => {
+    setLayoutRevision((value) => value + 1);
+  }, []);
 
   const memberCount = useMemo(
     () => mapItems.filter((i) => i.type === "member").length,
     [mapItems]
   );
 
+  const counts = useMemo(
+    () => countMapItemsByType(searchMapItems(mapItems, search)),
+    [mapItems, search]
+  );
+
+  const activeFilterCount = useMemo(
+    () => countActiveMapFilters(typeFilter, categoryFilter, search),
+    [typeFilter, categoryFilter, search]
+  );
+
   const fallbackVariant: MapErrorCategory = hasToken
     ? mapErrorCategory
     : "missing-token";
 
-  const heroHeight =
-    "min-h-[min(520px,78vh)] lg:min-h-[620px]";
+  const heroHeight = cn(
+    "mobile-map-viewport--home md:min-h-[620px] lg:min-h-[620px]"
+  );
+
+  const detailSheetOpen =
+    isMobileLayout &&
+    Boolean(selectedItem) &&
+    selectedItem?.id !== closedDetailId;
+
+  const handleSelectItem = useCallback(
+    (item: MapItem) => {
+      onMapItemSelect(item);
+      setClosedDetailId(null);
+    },
+    [onMapItemSelect]
+  );
+
+  const handleResetFilters = useCallback(() => {
+    onTypeFilterChange("all");
+    onCategoryFilterChange("all");
+    onSearchChange("");
+  }, [onTypeFilterChange, onCategoryFilterChange, onSearchChange]);
+
+  const handleApplyFilters = useCallback(() => {
+    setFilterSheetOpen(false);
+    bumpLayout();
+  }, [bumpLayout]);
+
+  const handleFilterSheetChange = useCallback(
+    (open: boolean) => {
+      setFilterSheetOpen(open);
+      if (!open) bumpLayout();
+    },
+    [bumpLayout]
+  );
 
   const mapBlock = !hasToken || !mapboxToken ? (
     <MockMapPanel
@@ -105,12 +162,12 @@ export function HomeMapHero({
   ) : mapStatus === "error" ? (
     <MapFallback variant={fallbackVariant} className={heroHeight} />
   ) : (
-  <CarRadarMap
+    <CarRadarMap
       variant="dashboard"
       accessToken={mapboxToken}
       items={visibleItems}
       selectedId={selectedMapItemId}
-      onSelectItem={onMapItemSelect}
+      onSelectItem={handleSelectItem}
       onStatusChange={(status, category) => {
         setMapStatus(status);
         if (category) setMapErrorCategory(category);
@@ -122,6 +179,7 @@ export function HomeMapHero({
       enableInteraction
       enhanceMarkers
       heightClassName={cn("h-full", heroHeight)}
+      layoutRevision={layoutRevision}
     />
   );
 
@@ -144,9 +202,18 @@ export function HomeMapHero({
           </div>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col p-3 sm:p-4 lg:p-5">
+        <MobileMapToolbar
+          search={search}
+          onSearchChange={onSearchChange}
+          onOpenFilters={() => setFilterSheetOpen(true)}
+          activeFilterCount={activeFilterCount}
+          fullMapHref="/map"
+          className="top-2"
+        />
+
+        <div className="pointer-events-none absolute inset-0 z-10 hidden flex-col p-3 sm:p-4 md:flex lg:p-5">
           <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="pointer-events-auto w-full max-w-[300px] shrink-0">
+            <div className="pointer-events-auto hidden w-full max-w-[300px] shrink-0 md:block">
               <HomeFloatingFilters
                 search={search}
                 onSearchChange={onSearchChange}
@@ -169,7 +236,7 @@ export function HomeMapHero({
             </div>
           </div>
 
-          <div className="pointer-events-auto mt-auto pt-3">
+          <div className="pointer-events-auto mt-auto hidden pt-3 md:block">
             <ScenePulseStrip
               weekendCount={events.length}
               newShopCount={shopCount}
@@ -182,20 +249,55 @@ export function HomeMapHero({
             />
           </div>
         </div>
+      </div>
 
-        <div className="absolute bottom-[7.5rem] right-4 z-20 hidden sm:block lg:bottom-28">
+      <div className="px-4 pt-3 md:hidden">
+        <ScenePulseStrip
+          weekendCount={events.length}
+          newShopCount={shopCount}
+          featuredClubCount={communities.length}
+          activeMemberCount={memberCount}
+          onThisWeekend={onPulseThisWeekend}
+          onNewShops={onPulseNewShops}
+          onFeaturedClubs={onPulseFeaturedClubs}
+          onActiveMembers={onPulseActiveMembers}
+        />
+        <div className="mt-3 flex justify-end">
           <Link
             href="/map"
-            className="rounded-full border border-white/[0.12] bg-[#0B1118]/85 px-4 py-2 text-xs font-medium text-[#F8FAFC] backdrop-blur-md transition hover:border-[#3B82F6]/40 hover:shadow-[0_0_20px_-6px_rgba(59,130,246,0.4)]"
+            className="inline-flex min-h-11 items-center rounded-full border border-white/[0.12] bg-[#0B1118]/85 px-4 text-xs font-medium text-[#F8FAFC] backdrop-blur-md"
           >
-            {t.map.openFullMap}
+            {t.mobile.openFullMap}
           </Link>
         </div>
       </div>
 
-      <div className="px-4 pb-2 pt-3 lg:hidden">
-        <MapDetailPanel item={selectedItem} variant="floating" />
-      </div>
+      <MobileFilterSheet
+        open={filterSheetOpen}
+        onOpenChange={handleFilterSheetChange}
+        typeFilter={typeFilter}
+        onTypeFilterChange={onTypeFilterChange}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={onCategoryFilterChange}
+        sortMode={sortMode}
+        onSortChange={onSortChange}
+        counts={counts}
+        onReset={handleResetFilters}
+        onApply={handleApplyFilters}
+      />
+
+      {isMobileLayout ? (
+        <MobileDetailSheet
+          item={selectedItem}
+          open={detailSheetOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setClosedDetailId(selectedItem?.id ?? null);
+              bumpLayout();
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }

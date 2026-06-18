@@ -62,7 +62,8 @@ export function mapItemMatchesFilter(
   item: MapItem,
   filter: MapFilterId
 ): boolean {
-  if (filter === "all") return true;
+  if (filter === "member") return false;
+  if (filter === "all") return item.type !== "member";
   if (filter === "zone") return item.type === "zone";
   return item.type === filter;
 }

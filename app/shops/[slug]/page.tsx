@@ -9,6 +9,8 @@ import { categoryToLabel } from "@/lib/mappers/ui";
 import { getApprovedClubs } from "@/lib/repositories/clubs";
 import { getApprovedEvents } from "@/lib/repositories/events";
 import { getShopBySlug } from "@/lib/repositories/shops";
+import { buildShareMetadata } from "@/lib/share/metadata";
+import { getEntitySlug } from "@/lib/utils/slug";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -23,10 +25,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const shop = await resolveShop(slug);
   if (!shop) return { title: "Shop not found" };
   const category = categoryToLabel(shop.category);
-  return {
+  return buildShareMetadata({
     title: `${shop.name} | ${shop.city} Car Shop | ${brand.appName}`,
     description: `Find ${shop.name}, a ${category} shop in ${shop.city}. View services, socials, directions, and nearby car scene info on ${brand.appName}.`,
-  };
+    path: `/shops/${getEntitySlug(shop)}`,
+  });
 }
 
 export default async function ShopDetailPage({ params }: PageProps) {

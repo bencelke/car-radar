@@ -2,8 +2,11 @@
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { COLLECTIONS } from "@/lib/firebase/collections";
 import { isProfileAdmin } from "@/lib/repositories/users";
+import { getFirebaseClientDiagnostics } from "@/lib/firebase/diagnostics";
 import {
+  app,
   isAuthAvailable,
   isFirebaseConfigured,
   isFirestoreAvailable,
@@ -42,7 +45,9 @@ export function FirebaseDiagnosticsPanel() {
   const firestoreImportEnabled =
     isFirebaseConfigured && isFirestoreAvailable && isAdmin && !isDevAdminBypass;
   const profileLoaded = Boolean(profile);
+  const profilePath = user?.uid ? `${COLLECTIONS.users}/${user.uid}` : "—";
   const resolvedAdmin = isDevAdminBypass || (Boolean(user) && isProfileAdmin(profile));
+  const firebaseDiagnostics = getFirebaseClientDiagnostics(app);
 
   return (
     <div className="mx-auto mb-4 max-w-[1920px] px-4 lg:px-6">
@@ -54,6 +59,40 @@ export function FirebaseDiagnosticsPanel() {
           <StatusRow
             label={t.auth.diagnosticsFirebaseConfigured}
             value={isFirebaseConfigured ? yes : no}
+          />
+          <StatusRow
+            label={t.auth.diagnosticsProjectId}
+            value={firebaseDiagnostics.projectId || "—"}
+          />
+          <StatusRow
+            label="Initialized project ID"
+            value={firebaseDiagnostics.initializedProjectId || "—"}
+          />
+          <StatusRow
+            label={t.auth.diagnosticsExpectedProjectId}
+            value={firebaseDiagnostics.expectedProjectId}
+          />
+          <StatusRow
+            label="Config state"
+            value={firebaseDiagnostics.configState}
+          />
+          <StatusRow
+            label={t.auth.diagnosticsProjectMatch}
+            value={
+              firebaseDiagnostics.configState === "ready"
+                ? yes
+                : firebaseDiagnostics.projectMismatch
+                  ? no
+                  : "—"
+            }
+          />
+          <StatusRow
+            label={t.auth.diagnosticsAuthDomain}
+            value={firebaseDiagnostics.authDomain || "—"}
+          />
+          <StatusRow
+            label={t.auth.diagnosticsHostname}
+            value={firebaseDiagnostics.hostname || "—"}
           />
           <StatusRow
             label={t.auth.diagnosticsAuth}
@@ -80,6 +119,10 @@ export function FirebaseDiagnosticsPanel() {
           <StatusRow
             label={t.auth.diagnosticsProfileLoaded}
             value={profileLoaded ? yes : no}
+          />
+          <StatusRow
+            label={t.auth.diagnosticsProfilePath}
+            value={profilePath}
           />
           {profile ? (
             <>

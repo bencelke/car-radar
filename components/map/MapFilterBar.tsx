@@ -12,7 +12,6 @@ type FilterOption = {
 
 const TYPE_FILTERS: FilterOption[] = [
   { id: "all", labelKey: "filterAll" },
-  { id: "member", labelKey: "filterMembers" },
   { id: "shop", labelKey: "filterShops" },
   { id: "event", labelKey: "filterEvents" },
   { id: "club", labelKey: "filterClubs" },

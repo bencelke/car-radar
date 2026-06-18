@@ -7,6 +7,7 @@ import { InfoGrid } from "@/components/detail/InfoGrid";
 import { RelatedEntityList } from "@/components/detail/RelatedEntityList";
 import { RelatedSection } from "@/components/detail/RelatedSection";
 import { SocialLinks, type SocialLinkItem } from "@/components/detail/SocialLinks";
+import { DetailShareBar } from "@/components/share/DetailShareBar";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { categoryToLabel } from "@/lib/mappers/ui";
 import type { CarEvent, CarShop, Club } from "@/lib/types";
@@ -46,6 +47,7 @@ export function ShopDetailView({
 
   return (
     <div className="space-y-6">
+      <DetailShareBar entity={{ type: "shop", shop }} />
       <DetailHero
         title={shop.name}
         typeBadge={categoryToLabel(shop.category)}

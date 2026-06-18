@@ -9,20 +9,14 @@ import { LoginCard } from "@/components/auth/LoginCard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/button";
+import { sanitizeNextPath } from "@/lib/auth/sanitize-next-path";
 import { brand } from "@/lib/config/brand";
-
-function safeNextPath(next: string | null): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) {
-    return brand.nav.profile.href;
-  }
-  return next;
-}
 
 export function LoginPageContent() {
   const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = safeNextPath(searchParams.get("next"));
+  const nextPath = sanitizeNextPath(searchParams.get("next"));
   const { user, loading, isAdmin, signOut } = useAuth();
 
   const handleSuccess = useCallback(() => {
@@ -31,7 +25,7 @@ export function LoginPageContent() {
   }, [router, nextPath]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-[100dvh] overflow-x-clip">
       <div
         className="pointer-events-none absolute inset-0 bg-[#05070A]"
         aria-hidden
@@ -87,7 +81,11 @@ export function LoginPageContent() {
               onSignOut={() => void signOut()}
             />
           ) : (
-            <LoginCard onSuccess={handleSuccess} showGarageNote />
+            <LoginCard
+              onSuccess={handleSuccess}
+              nextUrl={nextPath}
+              showGarageNote
+            />
           )}
 
           <p className="mt-6 text-center text-sm">

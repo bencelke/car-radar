@@ -63,7 +63,9 @@ export function AuthModal({
           <LoginCard
             initialMode={initialMode}
             onSuccess={onClose}
+            nextUrl={nextPath}
             showGarageNote={false}
+            showInstagramNote={false}
             className="border-0 bg-transparent p-0 shadow-none backdrop-blur-none"
           />
           <p className="mt-4 text-center text-xs text-[#64748B]">

@@ -54,6 +54,8 @@ type CarRadarMapProps = {
   enableDragPan?: boolean;
   initialFilter?: MapFilterId;
   enhanceMarkers?: boolean;
+  /** Triggers map.resize() when layout overlays change (mobile sheets, etc.) */
+  layoutRevision?: number;
 };
 
 const ZONES_SOURCE = "carradar-zones";
@@ -158,6 +160,7 @@ export function CarRadarMap({
   enableDragPan,
   initialFilter: _initialFilter,
   enhanceMarkers = true,
+  layoutRevision = 0,
 }: CarRadarMapProps) {
   const { t } = useLocale();
   const isDashboard = variant === "dashboard";
@@ -186,7 +189,9 @@ export function CarRadarMap({
   const useNativeControls =
     showNativeControls ??
     (showControls !== false && variant === "full" && !useCustomControls);
-  const shellMinHeight = isDashboard ? "min-h-[420px]" : "min-h-[640px]";
+  const shellMinHeight = isDashboard
+    ? "min-h-[280px] md:min-h-[420px]"
+    : "min-h-[280px] md:min-h-[640px]";
   const [mapReady, setMapReady] = useState(false);
   const [hoveredMember, setHoveredMember] = useState<MapItem | null>(null);
   const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(
@@ -496,13 +501,19 @@ export function CarRadarMap({
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !mapReady) return;
+    scheduleResize(map, 80);
+  }, [layoutRevision, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     const el = containerRef.current;
     if (!map || !el || typeof ResizeObserver === "undefined") return;
 
     const observer = new ResizeObserver(() => scheduleResize(map, 50));
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [mapReady]);
 
   return (
     <div

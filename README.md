@@ -52,13 +52,37 @@ npm run dev:optimize-brand
 
 Replace with a final vector/SVG logo when available. Login: `/login` (email/password via Firebase Auth).
 
+### Community features (club follows, events, RSVP)
+
+- **Follow clubs** — signed-in users; `/clubs/[slug]` follow button
+- **Announcements** — club managers publish at `/clubs/[slug]/manage`
+- **Events** — club managers create meets; public **Meet Finder** at `/events`
+- **RSVP** — going / interested / not going on event detail pages
+- **Event check-in** — organizer QR session, short-lived token, attendee verify at `/events/{slug}/check-in` (see [docs/event-check-in.md](docs/event-check-in.md))
+- **In-app notifications** — club/event alerts for followers and RSVPs (see [docs/notifications.md](docs/notifications.md))
+- **My Garage** — editable car profile, mods, build progress, primary photo at `/garage`; public published garages at `/garage/[id]` (see [docs/garage-system.md](docs/garage-system.md))
+- **Garage following & feed** — follow public builds, `/following`, activity feed at `/feed` (see [docs/social-following.md](docs/social-following.md))
+- **Share cards & invites** — branded PNG share cards, copy/native share, invite links at `/invite/[code]` (see [docs/share-and-invites.md](docs/share-and-invites.md))
+- **Map policy** — member car markers removed from public map; profiles stay at `/members`
+
+See [docs/product-roadmap.md](docs/product-roadmap.md) and [docs/firestore-schema.md](docs/firestore-schema.md).
+
+Deploy updated rules after pulling:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
 ### Local environment setup
+
+**Firebase project:** `carradar-bd6fb` (ShiftIt branding; this is the Firebase project ID only).
 
 1. In the project root, create **`.env.local`** (it is not in git — see `.gitignore`).
 2. Copy the variable names from **`.env.example`** into `.env.local`.
-3. In [Firebase Console](https://console.firebase.google.com/) → your project → **Project settings** → **Your apps** → Web app → copy the **Firebase SDK** config values into the matching `NEXT_PUBLIC_FIREBASE_*` keys (do not paste config into source files).
+3. In [Firebase Console](https://console.firebase.google.com/) → project **carradar-bd6fb** → **Project settings** → **Your apps** → Web app → copy the **complete** Firebase SDK config into the matching `NEXT_PUBLIC_FIREBASE_*` keys. **Do not mix values from different Firebase projects.**
 4. Optional: add a [Mapbox](https://account.mapbox.com/) access token as `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` for `/map`.
-5. **Restart** the dev server after any env change: stop `npm run dev`, then run it again.
+5. Verify alignment: `npm run firebase:check`
+6. **Restart** the dev server after any env change: stop `npm run dev`, then run it again.
 
 **Never commit `.env.local`.** Only `.env.example` (empty placeholders) belongs in the repo.
 
@@ -120,15 +144,23 @@ Do not hardcode admin emails in code. Do not put service account keys in the fro
 
 ### Deploy Firestore security rules
 
-Rules live in `firestore.rules`. `firebase.json` points Firestore to that file.
+Rules live in `firestore.rules`. `.firebaserc` must target **`carradar-bd6fb`**. `firebase.json` points Firestore and Storage to local rule files.
 
-When you have the [Firebase CLI](https://firebase.google.com/docs/cli) installed and the project linked:
+Before deploying:
 
 ```bash
-firebase deploy --only firestore:rules
+npm run firebase:check
 ```
 
-Until rules are deployed, rely on Console rules appropriate for your environment. **Production:** only admins should reach `/admin`; public users must not bulk-import or publish listings.
+When you have the [Firebase CLI](https://firebase.google.com/docs/cli) installed and authenticated:
+
+```bash
+firebase login
+firebase use carradar-bd6fb
+firebase deploy --only firestore:rules,firestore:indexes,storage
+```
+
+Until rules are deployed to **carradar-bd6fb**, Firestore may return `permission-denied` even when `.env.local` is correct. **Production:** only admins should reach `/admin`; public users must not bulk-import or publish listings.
 
 ### Publish on approve (Day 8)
 

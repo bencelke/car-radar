@@ -16,7 +16,7 @@ export default async function MapPage() {
   const items = await loadMapItems();
 
   return (
-    <PageShell>
+    <PageShell className="px-0 py-0 md:px-4 md:py-6 lg:px-6">
       <MapPageClient items={items} />
     </PageShell>
   );

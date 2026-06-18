@@ -56,9 +56,139 @@ Documents map to `CarEvent`.
 | `imageUrl` | string? | |
 | `verified` | boolean | |
 | `featured` | boolean? | |
-| `interestedCount` | number? | |
+| `interestedCount` | number? | RSVP summary (maintained on write in V1) |
+| `goingCount` | number? | RSVP summary |
+| `notGoingCount` | number? | Admin/club manager visibility |
+| `checkedInCount` | number? | **Future** check-in phase — no UI yet |
+| `clubId` | string? | Owning club for club-managed events |
+| `clubName` | string? | Denormalized display |
+| `meetingRoute` | string? | Route description |
+| `maxAttendance` | number? | Capacity hint |
+| `createdByUid` | string? | Firebase Auth uid |
 | `createdAt` | string (ISO) | |
 | `updatedAt` | string (ISO) | |
+
+Public read includes `approved` and `cancelled` events.
+
+## `club_follows`
+
+Document id: `{userId}_{clubId}` (deterministic).
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `userId` | string | Firebase Auth uid |
+| `clubId` | string | Target club |
+| `createdAt` | string (ISO) | |
+
+## `club_announcements`
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `clubId` | string | |
+| `authorUid` | string | |
+| `authorDisplayName` | string? | |
+| `title` | string | |
+| `body` | string | |
+| `type` | string | `meet` \| `route_change` \| `cancellation` \| `sponsor` \| `club_news` \| `general` |
+| `status` | string | `draft` \| `published` \| `archived` |
+| `relatedEventId` | string? | Optional link |
+| `publishedAt` | string (ISO)? | |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO)? | |
+
+Public read: `status == published` only.
+
+## `event_rsvps`
+
+Document id: `{eventId}_{userId}` (deterministic).
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `eventId` | string | |
+| `userId` | string | Firebase Auth uid |
+| `status` | string | `going` \| `interested` \| `not_going` |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO)? | |
+
+V1 updates `goingCount` / `interestedCount` on the event document after RSVP writes. At scale, move counters to Cloud Functions.
+
+### Check-in fields on `car_events`
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `checkInEnabled` | boolean? | Organizer enabled check-in |
+| `checkInStatus` | string? | `open` \| `closed` |
+| `checkInTokenHash` | string? | SHA-256 of active QR token (never store raw token) |
+| `checkInTokenExpiresAt` | string (ISO)? | Token expiry |
+| `checkedInCount` | number? | Denormalized count of active check-ins |
+| `checkInOpenedAt` | string (ISO)? | |
+| `checkInClosedAt` | string (ISO)? | |
+| `checkInOpenedByUid` | string? | Organizer who opened session |
+
+See [event-check-in.md](./event-check-in.md) for QR flow and security.
+
+## `event_checkins`
+
+Document id: `{eventId}_{userId}` (deterministic — one active check-in per user per event).
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `id` | string | Same as document id |
+| `eventId` | string | |
+| `userId` | string | Firebase Auth uid |
+| `memberProfileId` | string? | Optional club member profile |
+| `status` | string | `checked_in` \| `removed` |
+| `method` | string | `qr` \| `organizer_manual` |
+| `checkedInAt` | string (ISO) | |
+| `removedAt` | string (ISO)? | When organizer removes |
+| `checkedInByUid` | string? | Organizer uid for manual check-in |
+| `displayNameSnapshot` | string? | Display at check-in time |
+| `avatarUrlSnapshot` | string? | |
+| `clubNameSnapshot` | string? | |
+
+**Writes:** server routes + Admin SDK only (`firestore.rules` denies client create/update/delete). **Reads:** own document for user; club managers + admin for attendee list.
+
+Counter maintenance uses Firestore transactions in `lib/server/event-check-in-service.ts`. At scale, prefer Cloud Functions for `checkedInCount`.
+
+## `notifications`
+
+In-app notification records. Auto-generated document IDs with deterministic dedupe via hashed doc id in server service.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `recipientUid` | string | Firebase Auth uid |
+| `type` | string | See `NotificationType` in domain types |
+| `title` | string | Primary headline (often club or event name) |
+| `body` | string | Detail text |
+| `status` | string | `unread` \| `read` \| `archived` |
+| `clubId` | string? | |
+| `eventId` | string? | |
+| `announcementId` | string? | |
+| `memberId` | string? | Reserved for future claim approvals |
+| `actionUrl` | string? | In-app deep link |
+| `metadata` | map? | Includes `dedupeKey` |
+| `createdAt` | string (ISO) | |
+| `readAt` | string (ISO)? | |
+| `archivedAt` | string (ISO)? | |
+
+**Creates:** server / Admin SDK only. **Reads/updates:** recipient only (status fields).
+
+See [notifications.md](./notifications.md).
+
+## Club management fields (`clubs`)
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `ownerUid` | string? | Primary club owner |
+| `adminUids` | string[]? | Club admins |
+| `managerUids` | string[]? | Event/announcement managers |
+| `followerCount` | number? | Optional denormalized count |
+
+Authorization helper: `lib/clubs/club-auth.ts` → `canManageClub()`.
+
+## Public map policy
+
+Member/car markers are **not** rendered on the public map (`/` and `/map`). Member profiles remain at `/members` and club rosters. Map shows clubs, events, shops, and community zones only.
 
 ## `clubs`
 
@@ -351,6 +481,141 @@ firebase deploy --only firestore:rules
 
 Until rules are deployed, the Firebase Console default test mode may allow broader access — treat that as temporary for development only.
 
+Until rules are deployed, the Firebase Console default test mode may allow broader access — treat that as temporary for development only.
+
+## `garages`
+
+Documents map to `GarageProfile`. One garage per owner in V1.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `ownerUid` | string | Firebase Auth uid (immutable after create) |
+| `memberProfileId` | string? | Linked `club_members` doc when claimed |
+| `displayName` | string | Public display name |
+| `instagramHandle` | string? | Without `@` |
+| `instagram` | string? | Full URL |
+| `clubId` | string? | |
+| `clubName` | string? | Denormalized |
+| `city` | string? | |
+| `area` | string? | |
+| `country` | string? | |
+| `visibility` | string | `public` \| `club_only` \| `private` |
+| `status` | string | `draft` \| `published` \| `archived` |
+| `primaryCarId` | string? | Points at primary `garage_cars` doc |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO)? | |
+
+Public read when `visibility == public` and `status == published`.
+
+## `garage_cars`
+
+Documents map to `GarageCar`.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `garageId` | string | Parent garage |
+| `ownerUid` | string | Must match garage owner |
+| `make` | string | |
+| `model` | string | |
+| `year` | string? | |
+| `trim` | string? | |
+| `generation` | string? | |
+| `drivetrain` | string? | |
+| `transmission` | string? | |
+| `engine` | string? | |
+| `horsepower` | number? | |
+| `torqueNm` | number? | |
+| `buildStage` | string? | `stock` \| `stage_1` … `custom` |
+| `buildSummary` | string? | |
+| `primaryImageUrl` | string? | Firebase Storage download URL |
+| `primaryImageStoragePath` | string? | e.g. `garage-images/{uid}/{carId}/primary.webp` |
+| `imageSizeBytes` | number? | |
+| `imageContentType` | string? | |
+| `imageUpdatedAt` | string (ISO)? | |
+| `tags` | string[]? | |
+| `status` | string | `draft` \| `published` \| `archived` |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO)? | |
+
+## `garage_mods`
+
+Documents map to `GarageMod`.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `carId` | string | Parent car |
+| `ownerUid` | string | |
+| `category` | string | engine, turbo, exhaust, … |
+| `name` | string | |
+| `brand` | string? | |
+| `description` | string? | |
+| `installedAt` | string (ISO)? | |
+| `status` | string | `planned` \| `ordered` \| `installed` \| `removed` |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO)? | |
+
+## `garage_updates`
+
+Documents map to `BuildProgressUpdate`.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `carId` | string | Parent car |
+| `ownerUid` | string | |
+| `title` | string | |
+| `body` | string? | |
+| `type` | string | `mod_added`, `dyno_update`, `general`, … |
+| `relatedModId` | string? | |
+| `horsepowerSnapshot` | number? | |
+| `createdAt` | string (ISO) | |
+| `updatedAt` | string (ISO)? | |
+
+See [docs/garage-system.md](garage-system.md) for V1 scope and image paths.
+
+## `garage_follows`
+
+Documents map to `GarageFollow`. Deterministic id: `{followerUid}_{garageId}`.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `followerUid` | string | Firebase Auth uid |
+| `garageId` | string | Target garage |
+| `garageOwnerUid` | string | Denormalized |
+| `createdAt` | string (ISO) | |
+
+## `garage_feed_items`
+
+Documents map to `GarageFeedItem`. Generated from garage/build actions only.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `garageId` | string | |
+| `carId` | string? | |
+| `ownerUid` | string | Garage owner |
+| `type` | string | `mod_added`, `progress_update`, … |
+| `title` | string | |
+| `body` | string? | |
+| `imageUrl` | string? | |
+| `visibility` | string | `public` \| `followers` (V1 uses public) |
+| `dedupeKey` | string? | Optional idempotency |
+| `createdAt` | string (ISO) | |
+
+See [docs/social-following.md](social-following.md).
+
+## `share_links`
+
+Optional tracked share URLs (future campaign use).
+
+## `user_invites`
+
+Invite codes as document IDs. Types: `join_shiftit`, `join_club`, `claim_profile`, `event_invite`.
+
+## `share_analytics`
+
+Privacy-safe share/invite events (`link_copied`, `card_downloaded`, etc.). Admin read only.
+
+See [docs/share-and-invites.md](share-and-invites.md).
+
 ## `saved_places` (future)
 
 Subcollection or top-level with `userId` + `placeId` + `placeType`.
@@ -361,6 +626,18 @@ Subcollection or top-level with `userId` + `placeId` + `placeType`.
 - `car_events`: `status` + `startTime` (asc)
 - `communities`: `status` + `featured` (desc)
 - `submissions`: `status` + `createdAt` (desc)
+- `garages`: `ownerUid` + `status`
+- `garages`: `memberProfileId` (for member profile linking)
+- `garage_cars`: `garageId` + `status`
+- `garage_mods`: `carId` + `status` + `createdAt` (desc)
+- `garage_updates`: `carId` + `createdAt` (desc)
+- `garage_follows`: `followerUid` + `createdAt` (desc)
+- `garage_follows`: `garageId` + `createdAt` (desc)
+- `garage_feed_items`: `visibility` + `createdAt` (desc)
+- `garage_feed_items`: `garageId` + `visibility` + `createdAt` (desc)
+- `garages`: `status` + `visibility` + `lastActivityAt` (desc)
+- `garages`: `status` + `visibility` + `followerCount` (desc)
+- `garages`: `status` + `visibility` + `featured` + `lastActivityAt` (desc)
 
 ## Security rules
 

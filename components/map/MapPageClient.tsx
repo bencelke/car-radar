@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CarRadarMap, type MapLoadStatus } from "@/components/map/CarRadarMap";
 import { MapDetailPanel } from "@/components/map/MapDetailPanel";
@@ -9,8 +9,13 @@ import { MapFallback } from "@/components/map/MapFallback";
 import { MapFilterBar } from "@/components/map/MapFilterBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { MapSortControl } from "@/components/map/MapSortControl";
+import { MobileDetailSheet } from "@/components/mobile/MobileDetailSheet";
+import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
+import { MobileMapToolbar } from "@/components/mobile/MobileMapToolbar";
 import { GlassPanel } from "@/components/dashboard/glass-panel";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { countActiveMapFilters } from "@/lib/map/active-filter-count";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
   getMapboxToken,
   logMapboxTokenDiagnostic,
@@ -38,6 +43,14 @@ export function MapPageClient({ items }: MapPageClientProps) {
   const [mapStatus, setMapStatus] = useState<MapLoadStatus>("loading");
   const [mapErrorCategory, setMapErrorCategory] =
     useState<MapErrorCategory>("unknown");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [closedDetailId, setClosedDetailId] = useState<string | null>(null);
+  const [layoutRevision, setLayoutRevision] = useState(0);
+  const isMobileLayout = useMediaQuery("(max-width: 1023px)");
+
+  const bumpLayout = useCallback(() => {
+    setLayoutRevision((value) => value + 1);
+  }, []);
 
   const mapboxToken = useMemo(() => getMapboxToken(), []);
   const hasToken = Boolean(mapboxToken);
@@ -66,11 +79,22 @@ export function MapPageClient({ items }: MapPageClientProps) {
     return visible.find((i) => i.id === selectedId) ?? null;
   }, [visible, selectedId]);
 
+  const activeFilterCount = useMemo(
+    () => countActiveMapFilters(filter, categoryFilter, search),
+    [filter, categoryFilter, search]
+  );
+
   useEffect(() => {
     if (selectedId && !visible.some((i) => i.id === selectedId)) {
       setSelectedId(null);
+      setClosedDetailId(null);
     }
   }, [visible, selectedId]);
+
+  const detailSheetOpen =
+    isMobileLayout &&
+    Boolean(selectedItem) &&
+    selectedItem?.id !== closedDetailId;
 
   const visibleLabel = t.map.visibleCount.replace(
     "{count}",
@@ -86,9 +110,33 @@ export function MapPageClient({ items }: MapPageClientProps) {
     if (category) setMapErrorCategory(category);
   };
 
+  const handleSelectItem = useCallback((item: MapItem) => {
+    setSelectedId(item.id);
+    setClosedDetailId(null);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setFilter("all");
+    setCategoryFilter("all");
+    setSearch("");
+  }, []);
+
+  const handleApplyFilters = useCallback(() => {
+    setFilterSheetOpen(false);
+    bumpLayout();
+  }, [bumpLayout]);
+
+  const handleFilterSheetChange = useCallback(
+    (open: boolean) => {
+      setFilterSheetOpen(open);
+      if (!open) bumpLayout();
+    },
+    [bumpLayout]
+  );
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex flex-col md:gap-4">
+      <div className="hidden flex-col gap-3 md:flex lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-semibold tracking-tight text-white md:text-3xl">
             {t.map.title}
@@ -112,29 +160,31 @@ export function MapPageClient({ items }: MapPageClientProps) {
         </div>
       </div>
 
-      <MapFilterBar
-        active={filter}
-        counts={counts}
-        onChange={setFilter}
-        categoryFilter={categoryFilter}
-        onCategoryChange={setCategoryFilter}
-      />
+      <div className="hidden md:block">
+        <MapFilterBar
+          active={filter}
+          counts={counts}
+          onChange={setFilter}
+          categoryFilter={categoryFilter}
+          onCategoryChange={setCategoryFilter}
+        />
+        <p className="mt-2 text-xs text-white/40">{visibleLabel}</p>
+      </div>
 
-      <p className="text-xs text-white/40">{visibleLabel}</p>
-
-      <div className="flex flex-col gap-4 lg:flex-row">
-        <GlassPanel className="relative min-h-[640px] h-[72vh] flex-1 overflow-hidden">
+      <div className="relative flex flex-col md:gap-4 lg:flex-row">
+        <GlassPanel className="relative mobile-map-viewport flex-1 overflow-hidden md:min-h-[640px] md:h-[72vh]">
           {hasToken && mapboxToken && mapStatus !== "error" ? (
             <CarRadarMap
               variant="full"
               accessToken={mapboxToken}
               items={visible}
               selectedId={selectedId}
-              onSelectItem={(item) => setSelectedId(item.id)}
+              onSelectItem={handleSelectItem}
               onStatusChange={handleMapStatus}
               showNativeControls
               showCustomControls={false}
               enhanceMarkers
+              layoutRevision={layoutRevision}
             />
           ) : null}
 
@@ -148,19 +198,49 @@ export function MapPageClient({ items }: MapPageClientProps) {
             </div>
           ) : null}
 
-          <div className="pointer-events-none absolute bottom-3 left-3 z-10">
+          <MobileMapToolbar
+            search={search}
+            onSearchChange={setSearch}
+            onOpenFilters={() => setFilterSheetOpen(true)}
+            activeFilterCount={activeFilterCount}
+          />
+
+          <div className="pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 z-10 md:bottom-3">
             <MapLegend />
           </div>
         </GlassPanel>
 
         <MapDetailPanel
           item={selectedItem}
-          className="hidden lg:flex lg:sticky lg:top-24 lg:self-start"
+          className="hidden lg:flex lg:sticky lg:top-24 lg:w-80 lg:shrink-0 lg:self-start"
         />
       </div>
 
-      {selectedItem ? (
-        <MapDetailPanel item={selectedItem} className="lg:hidden" />
+      <MobileFilterSheet
+        open={filterSheetOpen}
+        onOpenChange={handleFilterSheetChange}
+        typeFilter={filter}
+        onTypeFilterChange={setFilter}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        sortMode={sortMode}
+        onSortChange={setSortMode}
+        counts={counts}
+        onReset={handleResetFilters}
+        onApply={handleApplyFilters}
+      />
+
+      {isMobileLayout ? (
+        <MobileDetailSheet
+          item={selectedItem}
+          open={detailSheetOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setClosedDetailId(selectedItem?.id ?? null);
+              bumpLayout();
+            }
+          }}
+        />
       ) : null}
     </div>
   );

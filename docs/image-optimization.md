@@ -1,6 +1,27 @@
-# Image optimization (CarRadar)
+# Image optimization (ShiftIt)
 
-CarRadar stores **paths or URLs only** in JSON and Firestore — never image binaries.
+ShiftIt stores **paths or URLs only** in JSON and Firestore — never image binaries.
+
+## Central presets
+
+Presets live in `lib/images/image-presets.ts` and are applied via `optimizeProfileImage()`:
+
+| Preset | Max dimension | Target size |
+|--------|---------------|-------------|
+| `member_car` | 1200px | ~220 KB WebP |
+| `club_cover` | 1600px | ~420 KB WebP |
+| `event_cover` | 1600px | ~420 KB WebP |
+| `announcement` | 1400px | ~320 KB WebP |
+| `profile_avatar` | 800px | ~160 KB WebP |
+
+## Storage paths
+
+- `club-images/{clubId}/cover.webp`
+- `member-images/{clubId}/{memberId}/primary.webp`
+- `event-images/{eventId}/cover.webp`
+- `announcement-images/{clubId}/{announcementId}/cover.webp`
+
+Admin and authorized club managers may upload; all uploads are optimized client-side before Storage write.
 
 ## End-to-end workflow (WBN example)
 

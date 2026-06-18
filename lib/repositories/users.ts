@@ -7,6 +7,7 @@ import {
   sanitizeFirestoreData,
 } from "@/lib/firebase/sanitize-firestore";
 import type { ProfileImageFields, UserProfile } from "@/lib/types";
+import { DEFAULT_NOTIFICATION_PREFERENCES } from "@/lib/types";
 
 export type UserProfileImageUpdate = ProfileImageFields & {
   avatarUrl: string;
@@ -19,9 +20,10 @@ export type UserProfileImageUpdate = ProfileImageFields & {
 
 export type SyncUserProfileInput = {
   uid: string;
-  email: string;
+  email: string | null;
   displayName?: string | null;
   photoURL?: string | null;
+  authProviders?: string[];
 };
 
 export type UserProfileSyncResult = {
@@ -48,7 +50,7 @@ function formatFirestoreError(error: unknown): string {
 function logUserProfileError(
   phase: "read" | "write",
   uid: string,
-  email: string,
+  email: string | null,
   error: unknown
 ): string {
   const formatted = formatFirestoreError(error);
@@ -56,7 +58,7 @@ function logUserProfileError(
   if (lastLoggedProfileErrorKey !== key) {
     lastLoggedProfileErrorKey = key;
     console.warn(
-      `[CarRadar] User profile ${phase} failed (uid=${uid}, email=${email}): ${formatted}`
+      `[CarRadar] User profile ${phase} failed (uid=${uid}, email=${email ?? "—"}): ${formatted}`
     );
   }
   return formatted;
@@ -65,6 +67,44 @@ function logUserProfileError(
 export function isProfileAdmin(profile: UserProfile | null | undefined): boolean {
   if (!profile) return false;
   return profile.role === "admin" || profile.isAdmin === true;
+}
+
+function hasCustomProfileImage(profile: UserProfile): boolean {
+  return Boolean(
+    profile.avatarUrl?.trim() ||
+      profile.imageUrl?.trim() ||
+      profile.imageStoragePath?.trim()
+  );
+}
+
+function mergeAuthProviders(
+  existing: string[] | undefined,
+  incoming: string[] | undefined
+): string[] | undefined {
+  if (!incoming?.length) return existing;
+  const merged = new Set([...(existing ?? []), ...incoming]);
+  return [...merged];
+}
+
+function resolveDisplayName(
+  existing: UserProfile | null,
+  incoming?: string | null
+): string | undefined {
+  const next = firestoreOptionalString(incoming);
+  if (next) return next;
+  return existing?.displayName;
+}
+
+function resolvePhotoURL(
+  existing: UserProfile | null,
+  incoming?: string | null
+): string | undefined {
+  if (existing && hasCustomProfileImage(existing)) {
+    return existing.photoURL;
+  }
+  const next = firestoreOptionalString(incoming);
+  if (next) return next;
+  return existing?.photoURL;
 }
 
 export async function getUserProfile(
@@ -93,27 +133,14 @@ function buildCreatePayload(
 ): Record<string, unknown> {
   return sanitizeFirestoreData({
     uid: input.uid,
-    email: input.email,
+    email: input.email ?? "",
     displayName: firestoreOptionalString(input.displayName),
     photoURL: firestoreOptionalString(input.photoURL),
+    authProviders: input.authProviders?.length ? input.authProviders : undefined,
     role: "user",
     isAdmin: false,
-    createdAt: now,
-    updatedAt: now,
-    lastLoginAt: now,
-  });
-}
-
-/** Merge-safe when document may already exist (never sets role/isAdmin). */
-function buildInitMergePayload(
-  input: SyncUserProfileInput,
-  now: string
-): Record<string, unknown> {
-  return sanitizeFirestoreData({
-    uid: input.uid,
-    email: input.email,
-    displayName: firestoreOptionalString(input.displayName),
-    photoURL: firestoreOptionalString(input.photoURL),
+    notificationPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
+    unreadNotificationCount: 0,
     createdAt: now,
     updatedAt: now,
     lastLoginAt: now,
@@ -122,15 +149,34 @@ function buildInitMergePayload(
 
 function buildSafeUpdatePayload(
   input: SyncUserProfileInput,
+  existing: UserProfile,
   now: string
 ): Record<string, unknown> {
-  return sanitizeFirestoreData({
-    email: input.email,
-    displayName: firestoreOptionalString(input.displayName),
-    photoURL: firestoreOptionalString(input.photoURL),
+  const providers = mergeAuthProviders(existing.authProviders, input.authProviders);
+  const payload: Record<string, unknown> = {
     updatedAt: now,
     lastLoginAt: now,
-  });
+  };
+
+  if (input.email) {
+    payload.email = input.email;
+  }
+
+  const displayName = resolveDisplayName(existing, input.displayName);
+  if (displayName) {
+    payload.displayName = displayName;
+  }
+
+  const photoURL = resolvePhotoURL(existing, input.photoURL);
+  if (photoURL) {
+    payload.photoURL = photoURL;
+  }
+
+  if (providers?.length) {
+    payload.authProviders = providers;
+  }
+
+  return sanitizeFirestoreData(payload);
 }
 
 /**
@@ -157,18 +203,10 @@ export async function syncUserProfile(
   if (!existing) {
     if (db) {
       try {
-        if (fetchError) {
-          await setDoc(
-            doc(db, COLLECTIONS.users, input.uid),
-            buildInitMergePayload(input, now),
-            { merge: true }
-          );
-        } else {
-          await setDoc(
-            doc(db, COLLECTIONS.users, input.uid),
-            buildCreatePayload(input, now)
-          );
-        }
+        await setDoc(
+          doc(db, COLLECTIONS.users, input.uid),
+          buildCreatePayload(input, now)
+        );
       } catch (error) {
         writeError = logUserProfileError("write", input.uid, input.email, error);
       }
@@ -185,9 +223,10 @@ export async function syncUserProfile(
 
     const profile: UserProfile = {
       uid: input.uid,
-      email: input.email,
+      email: input.email ?? "",
       displayName: firestoreOptionalString(input.displayName) ?? undefined,
       photoURL: firestoreOptionalString(input.photoURL) ?? undefined,
+      authProviders: input.authProviders?.length ? input.authProviders : undefined,
       role: "user",
       isAdmin: false,
       createdAt: now,
@@ -198,13 +237,14 @@ export async function syncUserProfile(
     return { profile, readError, writeError };
   }
 
-  const patch = buildSafeUpdatePayload(input, now);
+  const patch = buildSafeUpdatePayload(input, existing, now);
   const merged: UserProfile = {
     ...existing,
     uid: input.uid,
-    email: input.email,
-    displayName: firestoreOptionalString(input.displayName) ?? undefined,
-    photoURL: firestoreOptionalString(input.photoURL) ?? undefined,
+    email: input.email ?? existing.email,
+    displayName: resolveDisplayName(existing, input.displayName),
+    photoURL: resolvePhotoURL(existing, input.photoURL),
+    authProviders: mergeAuthProviders(existing.authProviders, input.authProviders),
     updatedAt: now,
     lastLoginAt: now,
   };
@@ -233,12 +273,18 @@ export async function getOrCreateUserProfile(
 
 export async function refreshCurrentUserProfile(): Promise<UserProfileSyncResult | null> {
   const user = auth?.currentUser;
-  if (!user?.email) return null;
+  if (!user) return null;
+
+  const { extractAuthProviders, resolveProviderEmail } = await import(
+    "@/lib/auth/social-auth"
+  );
+
   return syncUserProfile({
     uid: user.uid,
-    email: user.email,
+    email: resolveProviderEmail(user),
     displayName: user.displayName,
     photoURL: user.photoURL,
+    authProviders: extractAuthProviders(user),
   });
 }
 
@@ -260,6 +306,28 @@ export async function updateUserProfileImage(
       imageUpdatedAt: now,
       imageSizeBytes: image.imageSizeBytes,
       imageContentType: image.imageContentType,
+      updatedAt: now,
+    }),
+    { merge: true }
+  );
+}
+
+export async function updateUserInstagramProfile(
+  uid: string,
+  handle: string,
+  url: string
+): Promise<void> {
+  if (!db) {
+    throw new Error("FIREBASE_NOT_CONFIGURED");
+  }
+
+  const now = new Date().toISOString();
+  await setDoc(
+    doc(db, COLLECTIONS.users, uid),
+    sanitizeFirestoreData({
+      instagramHandle: handle,
+      instagramUrl: url,
+      instagramVerificationStatus: "unverified",
       updatedAt: now,
     }),
     { merge: true }

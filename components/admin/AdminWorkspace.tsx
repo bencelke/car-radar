@@ -1,17 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
-import { ClubImportWizard } from "@/components/admin/ClubImportWizard";
-import { CsvImportPanel } from "@/components/admin/CsvImportPanel";
-import { FirestoreDataPanel } from "@/components/admin/FirestoreDataPanel";
+import { AdminClubsPanel } from "@/components/admin/AdminClubsPanel";
+import { AdminEventsPanel } from "@/components/admin/AdminEventsPanel";
+import { AdminImportsPanel } from "@/components/admin/AdminImportsPanel";
+import { AdminMembersPanel } from "@/components/admin/AdminMembersPanel";
+import { AdminOverviewPanel } from "@/components/admin/AdminOverviewPanel";
 import { SubmissionReviewPanel } from "@/components/admin/SubmissionReviewPanel";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { Submission } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type AdminTab = "review" | "import" | "clubImport" | "firestore";
+type AdminTab =
+  | "overview"
+  | "clubs"
+  | "members"
+  | "events"
+  | "imports"
+  | "submissions";
 
 type AdminWorkspaceProps = {
   initialSubmissions: Submission[];
@@ -23,26 +30,27 @@ export function AdminWorkspace({
   pendingCount,
 }: AdminWorkspaceProps) {
   const { t } = useLocale();
-  const router = useRouter();
-  const [tab, setTab] = useState<AdminTab>("review");
+  const [tab, setTab] = useState<AdminTab>("overview");
 
   const tabs: { id: AdminTab; label: string; badge?: number }[] = [
-    { id: "review", label: t.admin.tabReview, badge: pendingCount },
-    { id: "import", label: t.admin.tabImport },
-    { id: "clubImport", label: t.admin.tabClubImport },
-    { id: "firestore", label: t.admin.tabFirestoreData },
+    { id: "overview", label: t.admin.tabOverview },
+    { id: "clubs", label: t.admin.tabClubs },
+    { id: "members", label: t.admin.tabMembersCars },
+    { id: "events", label: t.admin.tabEvents },
+    { id: "imports", label: t.admin.tabImports },
+    { id: "submissions", label: t.admin.tabSubmissions, badge: pendingCount },
   ];
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap gap-1 rounded-lg border border-white/[0.06] bg-[#151B24]/60 p-0.5">
+      <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-white/[0.06] bg-[#151B24]/60 p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
             className={cn(
-              "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition",
+              "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition sm:px-4",
               tab === item.id
                 ? "bg-[#EF4444]/20 text-[#F8FAFC]"
                 : "text-[#64748B] hover:text-[#CBD5E1]"
@@ -58,14 +66,18 @@ export function AdminWorkspace({
         ))}
       </div>
 
-      {tab === "review" ? (
-        <SubmissionReviewPanel initialSubmissions={initialSubmissions} />
-      ) : tab === "import" ? (
-        <CsvImportPanel onImported={() => router.refresh()} />
-      ) : tab === "clubImport" ? (
-        <ClubImportWizard />
+      {tab === "overview" ? (
+        <AdminOverviewPanel pendingCount={pendingCount} />
+      ) : tab === "clubs" ? (
+        <AdminClubsPanel />
+      ) : tab === "members" ? (
+        <AdminMembersPanel />
+      ) : tab === "events" ? (
+        <AdminEventsPanel />
+      ) : tab === "imports" ? (
+        <AdminImportsPanel />
       ) : (
-        <FirestoreDataPanel />
+        <SubmissionReviewPanel initialSubmissions={initialSubmissions} />
       )}
     </>
   );

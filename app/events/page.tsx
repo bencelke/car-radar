@@ -1,29 +1,21 @@
 import type { Metadata } from "next";
 
-import { EventCard } from "@/components/cards/EventCard";
-import { SectionPage } from "@/components/shared/section-page";
+import { MeetFinderClient } from "@/components/events/MeetFinderClient";
+import { PageShell } from "@/components/layout/PageShell";
 import { brand } from "@/lib/config/brand";
-import { getUpcomingEvents } from "@/lib/repositories/events";
+import { getPublicEvents } from "@/lib/repositories/events";
 
 export const metadata: Metadata = {
-  title: "Events",
+  title: `Meet Finder · ${brand.metadata.siteName}`,
   description: `Find car meets and events on ${brand.appName}.`,
 };
 
 export default async function EventsPage() {
-  const events = await getUpcomingEvents();
+  const events = await getPublicEvents();
 
   return (
-    <SectionPage
-      title="Meets & Events"
-      description="Browse upcoming meets, cruise nights, and car shows."
-      badge="Events"
-    >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
-          <EventCard key={event.id} event={event} />
-        ))}
-      </div>
-    </SectionPage>
+    <PageShell>
+      <MeetFinderClient events={events} />
+    </PageShell>
   );
 }

@@ -50,6 +50,14 @@ if (isFirebaseConfigured) {
 
 export { app, auth, db, storage };
 
+export {
+  EXPECTED_FIREBASE_PROJECT_ID,
+  getConfiguredFirebaseAuthDomain,
+  getConfiguredFirebaseProjectId,
+} from "@/lib/firebase/project";
+export { isFirebaseEnvConsistent } from "@/lib/firebase/env-consistency";
+export { isFirebaseProjectMismatch } from "@/lib/firebase/project-check";
+
 export const isAuthAvailable = auth !== null;
 export const isFirestoreAvailable = db !== null;
 export const isStorageAvailable = storage !== null;

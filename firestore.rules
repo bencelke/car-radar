@@ -7,6 +7,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isSignedIn() {
+      return signedIn();
+    }
+
     function isOwner(userId) {
       return signedIn() && request.auth.uid == userId;
     }
@@ -24,8 +28,29 @@ service cloud.firestore {
         );
     }
 
+    function clubDoc(clubId) {
+      return get(/databases/$(database)/documents/clubs/$(clubId)).data;
+    }
+
+    function isClubManager(clubId) {
+      let club = clubDoc(clubId);
+      return signedIn()
+        && exists(/databases/$(database)/documents/clubs/$(clubId))
+        && (
+          isAdmin()
+          || club.ownerUid == request.auth.uid
+          || ('adminUids' in club && request.auth.uid in club.adminUids)
+          || ('managerUids' in club && request.auth.uid in club.managerUids)
+        );
+    }
+
     function isApprovedListing() {
       return resource.data.status == 'approved';
+    }
+
+    function isPublicEvent() {
+      return resource.data.status == 'approved'
+        || resource.data.status == 'cancelled';
     }
 
     function isPendingSubmission() {
@@ -35,93 +60,494 @@ service cloud.firestore {
     function submissionCreateAllowed() {
       return isPendingSubmission()
         && !request.resource.data.keys().hasAny(['approvedEntityId', 'publishedCollection'])
-        && (!('reviewedAt' in request.resource.data) || request.resource.data.reviewedAt == null);
+        && (!('reviewedAt' in request.resource.data) || request.resource.data.reviewedAt == null)
+        && (
+          !('submittedByUid' in request.resource.data)
+          || request.resource.data.submittedByUid == null
+          || (isSignedIn() && request.resource.data.submittedByUid == request.auth.uid)
+        );
     }
 
     function userCreateAllowed() {
       return isOwner(userId)
+        && request.resource.data.uid == request.auth.uid
         && request.resource.data.email is string
-        && (
-          !('role' in request.resource.data)
-          || request.resource.data.role == 'user'
-        )
-        && (
-          !('isAdmin' in request.resource.data)
-          || request.resource.data.isAdmin == false
-        );
+        && request.resource.data.role == 'user'
+        && request.resource.data.isAdmin == false;
     }
 
     function userSelfUpdateAllowed() {
       return isOwner(userId)
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'email',
+          'displayName',
+          'photoURL',
+          'avatarUrl',
+          'imageUrl',
+          'imageStoragePath',
+          'imageUpdatedAt',
+          'imageSizeBytes',
+          'imageContentType',
+          'lastLoginAt',
+          'updatedAt',
+          'notificationPreferences',
+          'unreadNotificationCount',
+          'authProviders',
+          'instagramHandle',
+          'instagramUrl',
+          'instagramVerificationStatus'
+        ]);
+    }
+
+    function userAdminUpdateAllowed() {
+      return isAdmin()
+        && request.resource.data.uid == resource.data.uid;
+    }
+
+    function followDocId() {
+      return request.auth.uid + '_' + request.resource.data.clubId;
+    }
+
+    function rsvpDocId() {
+      return request.resource.data.eventId + '_' + request.auth.uid;
     }
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-
       allow create: if userCreateAllowed();
-
-      allow update: if isAdmin() || userSelfUpdateAllowed();
-
+      allow update: if userAdminUpdateAllowed() || userSelfUpdateAllowed();
       allow delete: if isAdmin();
     }
 
     match /submissions/{submissionId} {
       allow read: if isAdmin();
-
       allow create: if submissionCreateAllowed();
-
       allow update, delete: if isAdmin();
     }
 
     match /car_shops/{docId} {
-      allow read: if isApprovedListing();
+      allow read: if isApprovedListing() || isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
     match /car_events/{docId} {
-      allow read: if isApprovedListing();
-      allow create, update, delete: if isAdmin();
+      allow read: if isPublicEvent() || isAdmin()
+        || (
+          isSignedIn()
+          && resource.data.clubId is string
+          && isClubManager(resource.data.clubId)
+        );
+      allow create: if isAdmin()
+        || (
+          signedIn()
+          && request.resource.data.clubId is string
+          && isClubManager(request.resource.data.clubId)
+        );
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.clubId is string
+          && isClubManager(resource.data.clubId)
+        );
+      allow delete: if isAdmin();
     }
 
     match /clubs/{docId} {
-      allow read: if isApprovedListing();
-      allow create, update, delete: if isAdmin();
+      allow read: if isApprovedListing() || isAdmin()
+        || (isSignedIn() && isClubManager(docId));
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && isClubManager(docId)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['ownerUid', 'managerUids', 'adminUids', 'status', 'id', 'slug', 'createdAt', 'createdByUid'])
+        );
     }
 
     match /club_members/{docId} {
-      allow read: if resource.data.status == 'approved';
-
-      allow create: if isAdmin()
-        && request.resource.data.status is string
-        && (
-          !('claimStatus' in request.resource.data)
-          || request.resource.data.claimStatus == 'unclaimed'
-          || request.resource.data.claimStatus == 'pending'
+      allow read: if resource.data.status == 'approved' || isAdmin()
+        || (
+          isSignedIn()
+          && resource.data.claimedByUid == request.auth.uid
         )
-        && (
-          !('claimedByUid' in request.resource.data)
-          || request.resource.data.claimedByUid == null
+        || (
+          isSignedIn()
+          && resource.data.clubId is string
+          && isClubManager(resource.data.clubId)
         );
-
+      allow create: if isAdmin()
+        || (
+          signedIn()
+          && request.resource.data.clubId is string
+          && isClubManager(request.resource.data.clubId)
+          && request.resource.data.status == 'approved'
+          && (
+            !('claimStatus' in request.resource.data)
+            || request.resource.data.claimStatus == 'unclaimed'
+          )
+          && (
+            !('claimedByUid' in request.resource.data)
+            || request.resource.data.claimedByUid == null
+          )
+        );
       allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.clubId is string
+          && isClubManager(resource.data.clubId)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['claimStatus', 'claimedByUid', 'clubId', 'id'])
+        )
         || (
           signedIn()
           && resource.data.claimedByUid == request.auth.uid
           && resource.data.claimStatus == 'claimed'
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['claimStatus', 'claimedByUid', 'status', 'clubId'])
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['claimStatus', 'claimedByUid', 'status', 'clubId'])
         );
-
       allow delete: if isAdmin();
     }
 
+    match /club_follows/{followId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && followId == request.auth.uid + '_' + request.resource.data.clubId
+        && request.resource.data.clubId is string;
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /club_announcements/{docId} {
+      allow read: if resource.data.status == 'published' || isAdmin()
+        || (
+          isSignedIn()
+          && resource.data.clubId is string
+          && isClubManager(resource.data.clubId)
+        );
+      allow create: if signedIn()
+        && request.resource.data.clubId is string
+        && isClubManager(request.resource.data.clubId)
+        && request.resource.data.authorUid == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.clubId is string
+        && isClubManager(resource.data.clubId);
+      allow delete: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.clubId is string
+          && isClubManager(resource.data.clubId)
+        );
+    }
+
+    function eventClubId(eventId) {
+      return get(/databases/$(database)/documents/car_events/$(eventId)).data.clubId;
+    }
+
+    match /event_checkins/{checkInId} {
+      allow read: if signedIn()
+        && (
+          isAdmin()
+          || resource.data.userId == request.auth.uid
+          || (
+            resource.data.eventId is string
+            && exists(/databases/$(database)/documents/car_events/$(resource.data.eventId))
+            && eventClubId(resource.data.eventId) is string
+            && isClubManager(eventClubId(resource.data.eventId))
+          )
+        );
+      allow create, update, delete: if false;
+    }
+
+    function notificationSelfUpdateAllowed() {
+      return resource.data.recipientUid == request.auth.uid
+        && request.resource.data.recipientUid == resource.data.recipientUid
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'readAt', 'archivedAt']);
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn()
+        && resource.data.recipientUid == request.auth.uid;
+      allow create: if false;
+      allow update: if signedIn()
+        && resource.data.recipientUid == request.auth.uid
+        && notificationSelfUpdateAllowed();
+      allow delete: if false;
+    }
+
+    match /event_rsvps/{rsvpId} {
+      allow read: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isAdmin()
+          || (
+            exists(/databases/$(database)/documents/car_events/$(resource.data.eventId))
+            && get(/databases/$(database)/documents/car_events/$(resource.data.eventId)).data.clubId is string
+            && isClubManager(get(/databases/$(database)/documents/car_events/$(resource.data.eventId)).data.clubId)
+          )
+        );
+      allow create, update: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && rsvpId == request.resource.data.eventId + '_' + request.auth.uid
+        && request.resource.data.eventId is string;
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    function garageData(garageId) {
+      return get(/databases/$(database)/documents/garages/$(garageId)).data;
+    }
+
+    function isPublicGarage(garageId) {
+      return exists(/databases/$(database)/documents/garages/$(garageId))
+        && garageData(garageId).visibility == 'public'
+        && garageData(garageId).status == 'published';
+    }
+
+    function garageOwnerWriteAllowed() {
+      return isAdmin()
+        || (
+          signedIn()
+          && request.resource.data.ownerUid == request.auth.uid
+          && (
+            !resource.exists()
+            || resource.data.ownerUid == request.auth.uid
+          )
+        );
+    }
+
+    function garageFollowDocIdForRules(followerUid, garageId) {
+      return followerUid + '_' + garageId;
+    }
+
+    function garageFollowCounterUpdateAllowed(garageId) {
+      return signedIn()
+        && isPublicGarage(garageId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount', 'updatedAt'])
+        && request.resource.data.followerCount is int
+        && request.resource.data.followerCount >= 0
+        && (
+          (
+            request.resource.data.followerCount == resource.data.get('followerCount', 0) + 1
+            && exists(/databases/$(database)/documents/garage_follows/$(garageFollowDocIdForRules(request.auth.uid, garageId)))
+          )
+          || (
+            request.resource.data.followerCount == resource.data.get('followerCount', 0) - 1
+            && !exists(/databases/$(database)/documents/garage_follows/$(garageFollowDocIdForRules(request.auth.uid, garageId)))
+          )
+        );
+    }
+
+    match /garages/{garageId} {
+      allow read: if isPublicGarage(garageId)
+        || (
+          signedIn()
+          && (
+            isAdmin()
+            || resource.data.ownerUid == request.auth.uid
+          )
+        );
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasAll(['ownerUid', 'displayName', 'visibility', 'status']);
+      allow update: if (
+        garageOwnerWriteAllowed()
+        && request.resource.data.ownerUid == resource.data.ownerUid
+      ) || garageFollowCounterUpdateAllowed(garageId);
+      allow delete: if isAdmin();
+    }
+
+    match /garage_cars/{carId} {
+      allow read: if resource.data.garageId is string
+        && (
+          isPublicGarage(resource.data.garageId)
+          || (
+            signedIn()
+            && (
+              isAdmin()
+              || resource.data.ownerUid == request.auth.uid
+            )
+          )
+        );
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.garageId is string;
+      allow update: if signedIn()
+        && (
+          isAdmin()
+          || (
+            resource.data.ownerUid == request.auth.uid
+            && request.resource.data.ownerUid == resource.data.ownerUid
+            && request.resource.data.garageId == resource.data.garageId
+          )
+        );
+      allow delete: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.ownerUid == request.auth.uid
+        );
+    }
+
+    match /garage_mods/{modId} {
+      allow read: if resource.data.carId is string
+        && exists(/databases/$(database)/documents/garage_cars/$(resource.data.carId))
+        && (
+          isPublicGarage(get(/databases/$(database)/documents/garage_cars/$(resource.data.carId)).data.garageId)
+          || (
+            signedIn()
+            && (
+              isAdmin()
+              || resource.data.ownerUid == request.auth.uid
+            )
+          )
+        );
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if signedIn()
+        && (
+          isAdmin()
+          || (
+            resource.data.ownerUid == request.auth.uid
+            && request.resource.data.ownerUid == resource.data.ownerUid
+          )
+        );
+    }
+
+    match /garage_updates/{updateId} {
+      allow read: if resource.data.carId is string
+        && exists(/databases/$(database)/documents/garage_cars/$(resource.data.carId))
+        && (
+          isPublicGarage(get(/databases/$(database)/documents/garage_cars/$(resource.data.carId)).data.garageId)
+          || (
+            signedIn()
+            && (
+              isAdmin()
+              || resource.data.ownerUid == request.auth.uid
+            )
+          )
+        );
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if signedIn()
+        && (
+          isAdmin()
+          || (
+            resource.data.ownerUid == request.auth.uid
+            && request.resource.data.ownerUid == resource.data.ownerUid
+          )
+        );
+    }
+
+    match /garage_follows/{followId} {
+      allow read: if signedIn()
+        && (
+          resource.data.followerUid == request.auth.uid
+          || resource.data.garageOwnerUid == request.auth.uid
+          || isAdmin()
+        );
+      allow create: if signedIn()
+        && request.resource.data.followerUid == request.auth.uid
+        && request.resource.data.garageOwnerUid != request.auth.uid
+        && request.resource.data.garageId is string
+        && followId == garageFollowDocIdForRules(request.auth.uid, request.resource.data.garageId)
+        && isPublicGarage(request.resource.data.garageId)
+        && request.resource.data.garageOwnerUid is string;
+      allow delete: if signedIn()
+        && resource.data.followerUid == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /garage_feed_items/{itemId} {
+      allow read: if resource.data.visibility == 'public';
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.garageId is string
+        && isPublicGarage(request.resource.data.garageId)
+        && request.resource.data.visibility == 'public';
+      allow update, delete: if signedIn()
+        && (
+          isAdmin()
+          || resource.data.ownerUid == request.auth.uid
+        );
+    }
+
+    match /share_links/{linkId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.entityType is string
+        && request.resource.data.entityId is string
+        && request.resource.data.destinationUrl is string
+        && (
+          !('createdByUid' in request.resource.data)
+          || request.resource.data.createdByUid == request.auth.uid
+          || isAdmin()
+        );
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.createdByUid == request.auth.uid
+          && request.resource.data.entityType == resource.data.entityType
+          && request.resource.data.entityId == resource.data.entityId
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /user_invites/{inviteCode} {
+      allow read: if resource.data.status == 'active'
+        || (
+          signedIn()
+          && (
+            resource.data.inviterUid == request.auth.uid
+            || isAdmin()
+          )
+        );
+      allow create: if signedIn()
+        && inviteCode == request.resource.data.inviteCode
+        && request.resource.data.inviterUid == request.auth.uid
+        && request.resource.data.status == 'active';
+      allow update: if signedIn()
+        && (
+          isAdmin()
+          || (
+            resource.data.inviterUid == request.auth.uid
+            && request.resource.data.inviterUid == resource.data.inviterUid
+            && request.resource.data.inviteCode == resource.data.inviteCode
+          )
+          || (
+            request.auth.uid != null
+            && request.resource.data.status == 'used'
+            && resource.data.status == 'active'
+            && request.resource.data.usedByUid == request.auth.uid
+            && request.resource.data.inviterUid == resource.data.inviterUid
+          )
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /share_analytics/{eventId} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.entityType is string
+        && request.resource.data.entityId is string
+        && request.resource.data.action is string
+        && request.resource.data.createdAt is string
+        && (
+          !('userId' in request.resource.data)
+          || request.resource.data.userId == null
+          || (signedIn() && request.resource.data.userId == request.auth.uid)
+        );
+      allow update, delete: if false;
+    }
+
     match /community_zones/{docId} {
-      allow read: if isApprovedListing();
+      allow read: if isApprovedListing() || isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
     match /communities/{docId} {
-      allow read: if isApprovedListing();
+      allow read: if isApprovedListing() || isAdmin();
       allow create, update, delete: if isAdmin();
     }
   }

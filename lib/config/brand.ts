@@ -31,8 +31,7 @@ export const brand = {
     ] satisfies NavItem[],
     garage: {
       label: "Garage",
-      href: "#",
-      badge: "Soon" as const,
+      href: "/garage",
     },
     submit: { label: "Submit", href: "/submit" },
     admin: { label: "Admin", href: "/admin" },

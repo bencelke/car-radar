@@ -17,6 +17,8 @@ export type UploadProfileImageParams = {
   ownerId: string;
   fileExtension: "webp" | "jpg" | "jpeg" | "png";
   clubImageKind?: ClubStorageImageKind;
+  clubId?: string;
+  memberId?: string;
   onProgress?: (percent: number) => void;
 };
 
@@ -34,6 +36,59 @@ export function isFirebaseStorageConfigured(): boolean {
   );
 }
 
+export type UploadGarageCarImageParams = {
+  file: Blob | File;
+  ownerUid: string;
+  carId: string;
+  fileExtension: "webp" | "jpg" | "jpeg" | "png";
+  onProgress?: (percent: number) => void;
+};
+
+export async function uploadGarageCarImage(
+  params: UploadGarageCarImageParams
+): Promise<UploadProfileImageResult> {
+  if (!isFirebaseStorageConfigured() || !storage) {
+    throw new Error("FIREBASE_STORAGE_NOT_CONFIGURED");
+  }
+
+  const { file, ownerUid, carId, fileExtension, onProgress } = params;
+  const ext = fileExtension === "jpeg" ? "jpg" : fileExtension;
+  const storagePath = `garage-images/${ownerUid}/${carId}/primary.${ext}`;
+  const contentType =
+    file instanceof File && file.type
+      ? file.type
+      : ext === "webp"
+        ? "image/webp"
+        : ext === "png"
+          ? "image/png"
+          : "image/jpeg";
+
+  const storageRef = ref(storage, storagePath);
+  const task = uploadBytesResumable(storageRef, file, { contentType });
+
+  await new Promise<UploadTaskSnapshot>((resolve, reject) => {
+    task.on(
+      "state_changed",
+      (snapshot) => {
+        const total = snapshot.totalBytes;
+        const transferred = snapshot.bytesTransferred;
+        const percent = total > 0 ? Math.round((transferred / total) * 100) : 0;
+        onProgress?.(percent);
+      },
+      (error) => reject(error),
+      () => resolve(task.snapshot)
+    );
+  });
+
+  const downloadUrl = await getDownloadURL(storageRef);
+  return {
+    downloadUrl,
+    storagePath,
+    sizeBytes: task.snapshot.totalBytes,
+    contentType,
+  };
+}
+
 export async function uploadProfileImage(
   params: UploadProfileImageParams
 ): Promise<UploadProfileImageResult> {
@@ -41,13 +96,17 @@ export async function uploadProfileImage(
     throw new Error("FIREBASE_STORAGE_NOT_CONFIGURED");
   }
 
-  const { file, ownerType, ownerId, fileExtension, clubImageKind, onProgress } =
+  const { file, ownerType, ownerId, fileExtension, clubImageKind, clubId, memberId, onProgress } =
     params;
   const ext = fileExtension === "jpeg" ? "jpg" : fileExtension;
-  const storagePath =
-    ownerType === "club" && clubImageKind
-      ? `club-images/${ownerId}/${clubImageKind}.${ext}`
-      : `profile-images/${ownerType}/${ownerId}/profile.${ext}`;
+  let storagePath: string;
+  if (ownerType === "member" && clubId && memberId) {
+    storagePath = `member-images/${clubId}/${memberId}/primary.${ext}`;
+  } else if (ownerType === "club" && clubImageKind) {
+    storagePath = `club-images/${ownerId}/${clubImageKind === "cover" ? "cover" : "logo"}.${ext}`;
+  } else {
+    storagePath = `profile-images/${ownerType}/${ownerId}/profile.${ext}`;
+  }
   const contentType =
     file instanceof File && file.type
       ? file.type

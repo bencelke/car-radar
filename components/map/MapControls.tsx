@@ -19,7 +19,7 @@ type MapControlsProps = {
 };
 
 const controlBtnClass =
-  "flex size-9 items-center justify-center text-[#94A3B8] transition hover:border-[#3B82F6]/35 hover:bg-[#1E293B]/90 hover:text-[#F8FAFC] hover:shadow-[0_0_16px_-4px_rgba(59,130,246,0.45)] disabled:pointer-events-none disabled:opacity-40";
+  "flex size-11 items-center justify-center text-[#94A3B8] transition hover:border-[#3B82F6]/35 hover:bg-[#1E293B]/90 hover:text-[#F8FAFC] hover:shadow-[0_0_16px_-4px_rgba(59,130,246,0.45)] disabled:pointer-events-none disabled:opacity-40 md:size-9";
 
 export function MapControls({
   onZoomIn,
