@@ -83,5 +83,19 @@ service firebase.storage {
         && isImageUpload()
         && request.resource.size < 512 * 1024;
     }
+
+    match /community-posts/clubs/{clubId}/{postId}/{fileName} {
+      allow read: if true;
+      allow write: if signedIn()
+        && isImageUpload()
+        && request.resource.size < 512 * 1024;
+    }
+
+    match /community-posts/events/{eventId}/{postId}/{fileName} {
+      allow read: if true;
+      allow write: if signedIn()
+        && isImageUpload()
+        && request.resource.size < 512 * 1024;
+    }
   }
 }

@@ -11,6 +11,7 @@ import { RelatedSection } from "@/components/detail/RelatedSection";
 import { SocialLinks, type SocialLinkItem } from "@/components/detail/SocialLinks";
 import { EventAttendanceSummary } from "@/components/events/EventAttendanceSummary";
 import { EventCheckInStatus } from "@/components/events/EventCheckInStatus";
+import { EventConversationTabs } from "@/components/events/EventConversationTabs";
 import { EventRsvpControl } from "@/components/events/EventRsvpControl";
 import { DetailShareBar } from "@/components/share/DetailShareBar";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -23,6 +24,7 @@ type EventDetailViewProps = {
   event: CarEvent;
   relatedShops: CarShop[];
   relatedClubs: Club[];
+  hostClub?: Club | null;
 };
 
 function formatEventTime(iso: string): string {
@@ -41,6 +43,7 @@ export function EventDetailView({
   event,
   relatedShops,
   relatedClubs,
+  hostClub = null,
 }: EventDetailViewProps) {
   const { t } = useLocale();
   const { user } = useAuth();
@@ -113,71 +116,79 @@ export function EventDetailView({
         ) : null}
       </DetailHero>
 
-      <InfoGrid
-        items={[
-          { label: "Date", value: formatEventTime(event.startTime) },
-          {
-            label: "End",
-            value: event.endTime ? formatEventTime(event.endTime) : null,
-          },
-          { label: "Organizer", value: event.organizerName },
-          {
-            label: t.community.meetingRoute,
-            value: event.meetingRoute ?? null,
-          },
-        ]}
-      />
-
-      <EventRsvpControl
+      <EventConversationTabs
         event={event}
-        onCountsChange={() => {
-          void import("@/lib/repositories/events").then(({ getEventById }) =>
-            getEventById(event.id).then((fresh) => {
-              if (fresh) {
-                setGoingCount(fresh.goingCount ?? 0);
-                setInterestedCount(fresh.interestedCount ?? 0);
-              }
-            })
-          );
-        }}
-      />
+        club={hostClub}
+        details={
+          <>
+            <InfoGrid
+              items={[
+                { label: "Date", value: formatEventTime(event.startTime) },
+                {
+                  label: "End",
+                  value: event.endTime ? formatEventTime(event.endTime) : null,
+                },
+                { label: "Organizer", value: event.organizerName },
+                {
+                  label: t.community.meetingRoute,
+                  value: event.meetingRoute ?? null,
+                },
+              ]}
+            />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {event.lat != null && event.lng != null ? (
-          <DirectionsButton
-            lat={event.lat}
-            lng={event.lng}
-            label={t.detail.directions}
-          />
-        ) : null}
-        <SocialLinks title={t.detail.socialLinks} links={socialLinks} />
-      </div>
+            <EventRsvpControl
+              event={event}
+              onCountsChange={() => {
+                void import("@/lib/repositories/events").then(({ getEventById }) =>
+                  getEventById(event.id).then((fresh) => {
+                    if (fresh) {
+                      setGoingCount(fresh.goingCount ?? 0);
+                      setInterestedCount(fresh.interestedCount ?? 0);
+                    }
+                  })
+                );
+              }}
+            />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <RelatedSection title={t.detail.nearbyShops}>
-          <RelatedEntityList
-            items={relatedShops.slice(0, 6).map((shop) => ({
-              href: shopDetailPath(shop),
-              title: shop.name,
-              subtitle: `${shop.city}`,
-            }))}
-          />
-        </RelatedSection>
-        <RelatedSection title={t.detail.relatedClubs}>
-          <RelatedEntityList
-            items={relatedClubs.slice(0, 6).map((club) => ({
-              href: clubDetailPath(club),
-              title: club.name,
-              subtitle: `${club.type} · ${club.city}`,
-            }))}
-          />
-        </RelatedSection>
-      </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {event.lat != null && event.lng != null ? (
+                <DirectionsButton
+                  lat={event.lat}
+                  lng={event.lng}
+                  label={t.detail.directions}
+                />
+              ) : null}
+              <SocialLinks title={t.detail.socialLinks} links={socialLinks} />
+            </div>
 
-      <CorrectionLink
-        targetType="event"
-        targetName={event.title}
-        entityId={event.id}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <RelatedSection title={t.detail.nearbyShops}>
+                <RelatedEntityList
+                  items={relatedShops.slice(0, 6).map((shop) => ({
+                    href: shopDetailPath(shop),
+                    title: shop.name,
+                    subtitle: `${shop.city}`,
+                  }))}
+                />
+              </RelatedSection>
+              <RelatedSection title={t.detail.relatedClubs}>
+                <RelatedEntityList
+                  items={relatedClubs.slice(0, 6).map((club) => ({
+                    href: clubDetailPath(club),
+                    title: club.name,
+                    subtitle: `${club.type} · ${club.city}`,
+                  }))}
+                />
+              </RelatedSection>
+            </div>
+
+            <CorrectionLink
+              targetType="event"
+              targetName={event.title}
+              entityId={event.id}
+            />
+          </>
+        }
       />
     </div>
   );

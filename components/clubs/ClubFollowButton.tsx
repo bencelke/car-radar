@@ -21,6 +21,7 @@ type ClubFollowButtonProps = {
   clubId: string;
   clubSlug: string;
   initialFollowerCount?: number;
+  returnPath?: string;
   className?: string;
 };
 
@@ -28,6 +29,7 @@ export function ClubFollowButton({
   clubId,
   clubSlug,
   initialFollowerCount = 0,
+  returnPath,
   className,
 }: ClubFollowButtonProps) {
   const { t } = useLocale();
@@ -67,7 +69,7 @@ export function ClubFollowButton({
     };
   }, [user, clubId]);
 
-  const loginHref = `${brand.nav.login.href}?next=${encodeURIComponent(`/clubs/${clubSlug}`)}`;
+  const loginHref = `${brand.nav.login.href}?next=${encodeURIComponent(returnPath ?? `/clubs/${clubSlug}`)}`;
 
   const toggle = useCallback(async () => {
     if (!user) {

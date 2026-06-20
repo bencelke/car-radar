@@ -4,19 +4,23 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
-import { AuthBrandHero } from "@/components/auth/AuthBrandHero";
-import { LoginCard } from "@/components/auth/LoginCard";
+import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
+import { authUi } from "@/components/auth/auth-ui";
+import { PremiumAuthCard } from "@/components/auth/PremiumAuthCard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { sanitizeNextPath } from "@/lib/auth/sanitize-next-path";
 import { brand } from "@/lib/config/brand";
+import { cn } from "@/lib/utils";
 
 export function LoginPageContent() {
   const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = sanitizeNextPath(searchParams.get("next"));
+  const initialMode =
+    searchParams.get("mode") === "signUp" ? "signUp" : "signIn";
   const { user, loading, isAdmin, signOut } = useAuth();
 
   const handleSuccess = useCallback(() => {
@@ -25,55 +29,49 @@ export function LoginPageContent() {
   }, [router, nextPath]);
 
   return (
-    <div className="relative min-h-[100dvh] overflow-x-clip">
+    <div className="relative min-h-[calc(100dvh-3.5rem)] overflow-x-clip pb-[max(1rem,env(safe-area-inset-bottom))] sm:min-h-[calc(100dvh-4rem)]">
+      <div className="pointer-events-none absolute inset-0 bg-[#05070A]" aria-hidden />
       <div
-        className="pointer-events-none absolute inset-0 bg-[#05070A]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-45"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px)
+            linear-gradient(rgba(59,130,246,0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.045) 1px, transparent 1px)
           `,
           backgroundSize: "48px 48px",
         }}
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -left-1/4 top-1/4 size-[520px] rounded-full bg-[#EF4444]/15 blur-[120px]"
+        className="pointer-events-none absolute left-0 top-[18%] size-[480px] -translate-x-1/3 rounded-full bg-[#EF4444]/8 blur-[110px]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -right-1/4 bottom-0 size-[480px] rounded-full bg-[#3B82F6]/15 blur-[120px]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute left-1/2 top-0 size-[360px] -translate-x-1/2 rounded-full bg-[#A855F7]/10 blur-[100px]"
+        className="pointer-events-none absolute right-0 top-[32%] size-[520px] translate-x-1/4 rounded-full bg-[#3B82F6]/10 blur-[120px]"
         aria-hidden
       />
 
-      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-4 py-10 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:px-8 lg:py-14">
-        <div className="flex-1 lg:max-w-xl">
-          <AuthBrandHero compact={false} />
-          <ul className="mt-6 flex flex-wrap gap-2 sm:hidden">
-            {[t.auth.bulletClubs, t.auth.bulletBuilds, t.auth.bulletSubmit].map(
-              (text) => (
-                <li
-                  key={text}
-                  className="rounded-full border border-white/[0.08] bg-[#0B1118]/60 px-3 py-1 text-[10px] text-[#94A3B8]"
-                >
-                  {text}
-                </li>
-              )
-            )}
-          </ul>
+      <div className="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-[1220px] flex-col px-4 py-6 sm:min-h-[calc(100dvh-4rem)] sm:py-8 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:px-8 lg:py-10 xl:gap-20">
+        <div className="hidden w-full lg:flex lg:w-[54%] lg:items-center">
+          <AuthBrandPanel className="w-full" />
         </div>
 
-        <div className="w-full max-w-md shrink-0 lg:max-w-[420px]">
+        <div className="relative mx-auto flex w-full flex-col lg:mx-0 lg:w-[42%] lg:max-w-[460px] lg:shrink-0">
+          <div
+            className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-[#3B82F6]/6 blur-2xl lg:-inset-6"
+            aria-hidden
+          />
+
           {loading ? (
-            <div className="h-48 animate-pulse rounded-2xl border border-white/[0.06] bg-[#0B1118]/60" />
+            <div
+              className={cn(
+                authUi.card.shell,
+                authUi.card.padding,
+                authUi.card.width,
+                "mx-auto h-[28rem] animate-pulse bg-[#0B1118]/60"
+              )}
+              aria-hidden
+            />
           ) : user ? (
             <SignedInPanel
               email={user.email ?? ""}
@@ -81,21 +79,19 @@ export function LoginPageContent() {
               onSignOut={() => void signOut()}
             />
           ) : (
-            <LoginCard
+            <PremiumAuthCard
+              className="relative mx-auto"
               onSuccess={handleSuccess}
               nextUrl={nextPath}
-              showGarageNote
+              initialMode={initialMode}
             />
           )}
 
-          <p className="mt-6 text-center text-sm">
-            <Link
-              href="/map"
-              className="text-[#64748B] underline-offset-4 transition hover:text-[#CBD5E1] hover:underline"
-            >
-              {t.auth.continueExploring}
-            </Link>
-          </p>
+          {!loading && !user ? (
+            <div className="relative mt-8 lg:hidden">
+              <AuthBrandPanel benefitsOnly />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -114,16 +110,21 @@ function SignedInPanel({
   const { t } = useLocale();
 
   return (
-    <div className="rounded-2xl border border-white/[0.1] bg-[#0B1118]/70 p-6 backdrop-blur-xl">
-      <p className="font-heading text-lg font-semibold text-[#F8FAFC]">
-        {t.auth.signedInTitle}
-      </p>
-      <p className="mt-2 text-sm text-[#94A3B8]">{email}</p>
-      <div className="mt-6 flex flex-col gap-2">
+    <div
+      className={cn(
+        authUi.card.shell,
+        authUi.card.padding,
+        authUi.card.width,
+        "relative mx-auto"
+      )}
+    >
+      <p className={authUi.type.cardHeading}>{t.auth.signedInTitle}</p>
+      <p className={cn("mt-2", authUi.type.cardSubcopy)}>{email}</p>
+      <div className="mt-6 flex flex-col gap-2.5">
         <Button
           nativeButton={false}
           render={<Link href={brand.nav.profile.href} />}
-          className="w-full border border-[#3B82F6]/40 bg-[#3B82F6]/20 text-[#F8FAFC]"
+          className={authUi.button.primary}
         >
           {t.auth.goToProfile}
         </Button>
@@ -131,7 +132,7 @@ function SignedInPanel({
           <Button
             nativeButton={false}
             render={<Link href={brand.nav.admin.href} />}
-            className="w-full border border-[#EF4444]/40 bg-[#EF4444]/15 text-[#F8FAFC]"
+            className="h-[3.25rem] w-full border border-[#EF4444]/40 bg-[#EF4444]/15 text-[#F8FAFC]"
           >
             {t.auth.goToAdmin}
           </Button>
@@ -139,7 +140,7 @@ function SignedInPanel({
         <Button
           type="button"
           variant="outline"
-          className="w-full border-white/[0.08] text-[#CBD5E1]"
+          className="h-[3.25rem] w-full border-white/[0.08] text-[#CBD5E1]"
           onClick={onSignOut}
         >
           {t.auth.signOut}

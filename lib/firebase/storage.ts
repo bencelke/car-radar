@@ -44,16 +44,23 @@ export type UploadGarageCarImageParams = {
   onProgress?: (percent: number) => void;
 };
 
-export async function uploadGarageCarImage(
-  params: UploadGarageCarImageParams
-): Promise<UploadProfileImageResult> {
-  if (!isFirebaseStorageConfigured() || !storage) {
-    throw new Error("FIREBASE_STORAGE_NOT_CONFIGURED");
-  }
+export type UploadCommunityPostImageParams = {
+  file: Blob | File;
+  contextType: "club" | "event";
+  contextId: string;
+  postId: string;
+  fileExtension: "webp" | "jpg" | "jpeg" | "png";
+  onProgress?: (percent: number) => void;
+};
 
-  const { file, ownerUid, carId, fileExtension, onProgress } = params;
-  const ext = fileExtension === "jpeg" ? "jpg" : fileExtension;
-  const storagePath = `garage-images/${ownerUid}/${carId}/primary.${ext}`;
+async function uploadBlobToPath(
+  storagePath: string,
+  file: Blob | File,
+  ext: string,
+  onProgress?: (percent: number) => void
+): Promise<UploadProfileImageResult> {
+  if (!storage) throw new Error("FIREBASE_STORAGE_NOT_CONFIGURED");
+
   const contentType =
     file instanceof File && file.type
       ? file.type
@@ -89,6 +96,38 @@ export async function uploadGarageCarImage(
   };
 }
 
+export async function uploadCommunityPostImage(
+  params: UploadCommunityPostImageParams
+): Promise<UploadProfileImageResult> {
+  if (!isFirebaseStorageConfigured() || !storage) {
+    throw new Error("FIREBASE_STORAGE_NOT_CONFIGURED");
+  }
+
+  const { file, contextType, contextId, postId, fileExtension, onProgress } =
+    params;
+  const ext = fileExtension === "jpeg" ? "jpg" : fileExtension;
+  const storagePath =
+    contextType === "club"
+      ? `community-posts/clubs/${contextId}/${postId}/image.${ext}`
+      : `community-posts/events/${contextId}/${postId}/image.${ext}`;
+
+  return uploadBlobToPath(storagePath, file, ext, onProgress);
+}
+
+export async function uploadGarageCarImage(
+  params: UploadGarageCarImageParams
+): Promise<UploadProfileImageResult> {
+  if (!isFirebaseStorageConfigured() || !storage) {
+    throw new Error("FIREBASE_STORAGE_NOT_CONFIGURED");
+  }
+
+  const { file, ownerUid, carId, fileExtension, onProgress } = params;
+  const ext = fileExtension === "jpeg" ? "jpg" : fileExtension;
+  const storagePath = `garage-images/${ownerUid}/${carId}/primary.${ext}`;
+
+  return uploadBlobToPath(storagePath, file, ext, onProgress);
+}
+
 export async function uploadProfileImage(
   params: UploadProfileImageParams
 ): Promise<UploadProfileImageResult> {
@@ -107,39 +146,6 @@ export async function uploadProfileImage(
   } else {
     storagePath = `profile-images/${ownerType}/${ownerId}/profile.${ext}`;
   }
-  const contentType =
-    file instanceof File && file.type
-      ? file.type
-      : ext === "webp"
-        ? "image/webp"
-        : ext === "png"
-          ? "image/png"
-          : "image/jpeg";
 
-  const storageRef = ref(storage, storagePath);
-  const task = uploadBytesResumable(storageRef, file, { contentType });
-
-  await new Promise<UploadTaskSnapshot>((resolve, reject) => {
-    task.on(
-      "state_changed",
-      (snapshot) => {
-        const total = snapshot.totalBytes;
-        const transferred = snapshot.bytesTransferred;
-        const percent = total > 0 ? Math.round((transferred / total) * 100) : 0;
-        onProgress?.(percent);
-      },
-      (error) => reject(error),
-      () => resolve(task.snapshot)
-    );
-  });
-
-  const downloadUrl = await getDownloadURL(storageRef);
-  const sizeBytes = task.snapshot.totalBytes;
-
-  return {
-    downloadUrl,
-    storagePath,
-    sizeBytes,
-    contentType,
-  };
+  return uploadBlobToPath(storagePath, file, ext, onProgress);
 }

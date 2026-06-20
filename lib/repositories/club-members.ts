@@ -264,6 +264,38 @@ export async function updateClubMemberProfileImage(
   return updateClubMemberImage(memberId, image, baseMember);
 }
 
+export async function getApprovedClubMembershipForUser(
+  clubId: string,
+  uid: string
+): Promise<ClubMember | null> {
+  const fromMock = approvedMembersWithPublished().find(
+    (m) =>
+      m.clubId === clubId &&
+      m.claimedByUid === uid &&
+      m.claimStatus === "claimed" &&
+      m.status === "approved"
+  );
+  if (!db) return fromMock ?? null;
+
+  try {
+    const q = query(
+      collection(db, COLLECTIONS.clubMembers),
+      where("clubId", "==", clubId),
+      where("claimedByUid", "==", uid),
+      where("status", "==", "approved"),
+      where("claimStatus", "==", "claimed")
+    );
+    const snap = await getDocs(q);
+    const member = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as ClubMember)
+      .find((m) => m.claimStatus === "claimed" && m.status === "approved");
+    return member ?? fromMock ?? null;
+  } catch (error) {
+    logRepositoryFallback(COLLECTIONS.clubMembers, error);
+    return fromMock ?? null;
+  }
+}
+
 export async function getClaimedMemberForUser(
   uid: string
 ): Promise<ClubMember | null> {

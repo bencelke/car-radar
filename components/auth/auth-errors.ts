@@ -34,7 +34,7 @@ export function logSocialAuthError(
         : String(error);
 
   console.warn("[CarRadar] Social auth failed", {
-    provider: provider === "apple" ? "apple.com" : "google.com",
+    provider: provider === "apple" ? "apple.com" : provider === "facebook" ? "facebook.com" : "google.com",
     code: code || "(none)",
     message,
     projectId: getConfiguredFirebaseProjectId() || "(missing)",
@@ -93,6 +93,9 @@ export function mapFirebaseAuthError(
       case "auth/operation-not-allowed":
         if (provider === "apple") {
           return t.authAppleOperationNotAllowed;
+        }
+        if (provider === "facebook") {
+          return t.authFacebookOperationNotAllowed;
         }
         if (provider === "google") {
           return t.authGoogleOperationNotAllowed;

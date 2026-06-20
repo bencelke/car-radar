@@ -59,7 +59,7 @@ export function LanguageDropdown({
   const triggerClass =
     variant === "menu"
       ? "flex w-full min-h-11 items-center justify-between gap-2 rounded-xl px-3 text-sm text-[#CBD5E1] transition hover:bg-white/[0.04] hover:text-[#F8FAFC]"
-      : "flex min-h-9 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-[#0B1118] px-2.5 text-xs font-medium text-[#CBD5E1] transition hover:border-white/[0.12] hover:text-[#F8FAFC]";
+      : "flex h-11 min-h-11 items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#0B1118]/90 px-3 text-xs font-medium text-[#CBD5E1] transition hover:border-white/[0.12] hover:text-[#F8FAFC]";
 
   return (
     <div ref={panelRef} className={cn("relative", className)}>

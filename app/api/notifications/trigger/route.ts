@@ -7,6 +7,10 @@ import {
 } from "@/lib/firebase/admin-server";
 import { notifyClubFollowersOfAnnouncement, notifyClubFollowersOfNewEvent } from "@/lib/notifications/create-club-notifications";
 import {
+  buildOfficialPostNotifications,
+  buildPostCommentNotification,
+} from "@/lib/notifications/create-community-notifications";
+import {
   notifyEventParticipantsOfCancellation,
   notifyEventParticipantsOfUpdate,
 } from "@/lib/notifications/create-event-notifications";
@@ -17,7 +21,11 @@ import type { ClubAnnouncement } from "@/lib/types";
 import { canManageClub } from "@/lib/clubs/club-auth";
 import { getClubById } from "@/lib/repositories/clubs";
 import { getEventRecord } from "@/lib/repositories/events";
+import { getPostById } from "@/lib/repositories/posts";
+import { getPostCommentById } from "@/lib/repositories/post-comments";
+import { getClubFollowerUserIds } from "@/lib/repositories/club-follows";
 import { getUserProfile, isProfileAdmin } from "@/lib/repositories/users";
+import { createNotification, createNotificationsBatch } from "@/lib/server/notification-service";
 
 export const runtime = "nodejs";
 
@@ -25,7 +33,9 @@ type TriggerBody =
   | { kind: "club_announcement"; clubId: string; announcementId: string }
   | { kind: "club_event_created"; clubId: string; eventId: string }
   | { kind: "event_updated"; eventId: string; changedFields: EventUpdateField[] }
-  | { kind: "event_cancelled"; eventId: string };
+  | { kind: "event_cancelled"; eventId: string }
+  | { kind: "post_comment"; postId: string; commentId: string; actorUid: string }
+  | { kind: "community_post_official"; postId: string; actorUid: string };
 
 async function getClubAnnouncementForTrigger(
   clubId: string,
@@ -128,6 +138,37 @@ export async function POST(request: Request) {
           actorUid
         );
         return NextResponse.json({ ok: true, count });
+      }
+      case "post_comment": {
+        const [post, comment] = await Promise.all([
+          getPostById(body.postId),
+          getPostCommentById(body.commentId),
+        ]);
+        if (!post || !comment) {
+          return NextResponse.json({ error: "not_found" }, { status: 404 });
+        }
+        const input = buildPostCommentNotification(comment, post, body.actorUid);
+        if (!input) return NextResponse.json({ ok: true, count: 0 });
+        await createNotification(input);
+        return NextResponse.json({ ok: true, count: 1 });
+      }
+      case "community_post_official": {
+        const post = await getPostById(body.postId);
+        if (!post || !post.isOfficial) {
+          return NextResponse.json({ error: "not_found" }, { status: 404 });
+        }
+        if (post.contextType === "club" && post.clubId) {
+          await assertClubManager(actorUid, post.clubId);
+          const followers = await getClubFollowerUserIds(post.clubId);
+          const inputs = buildOfficialPostNotifications(
+            post,
+            followers,
+            body.actorUid
+          );
+          const count = await createNotificationsBatch(inputs);
+          return NextResponse.json({ ok: true, count });
+        }
+        return NextResponse.json({ ok: true, count: 0 });
       }
       default:
         return NextResponse.json({ error: "unknown_kind" }, { status: 400 });

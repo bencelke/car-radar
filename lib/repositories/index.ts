@@ -122,6 +122,37 @@ export {
 } from "./garages";
 export { getApprovedCommunityZones } from "./community-zones";
 export {
+  getPostsByContext,
+  getPinnedPostsByContext,
+  getPostById,
+  createPost,
+  updatePost,
+  deleteOwnPost,
+  moderatePost,
+  setPostPinned,
+  getRecentClubPosts,
+  getRecentEventPosts,
+} from "./posts";
+export type { PostActor, CreatePostInput } from "./posts";
+export {
+  getCommentsByPostId,
+  createComment,
+  updateOwnComment,
+  deleteOwnComment,
+  moderateComment,
+  getPostCommentById,
+} from "./post-comments";
+export {
+  togglePostLike,
+  hasUserLikedPost,
+  getPostReactionCount,
+} from "./post-reactions";
+export {
+  createPostReport,
+  getPendingReports,
+  reviewReport,
+} from "./post-reports";
+export {
   approveSubmission,
   createSubmission,
   getPendingSubmissions,

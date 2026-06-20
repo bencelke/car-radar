@@ -1,6 +1,6 @@
-# Social authentication setup (Google & Apple)
+# Social authentication setup (Google, Apple & Facebook)
 
-ShiftIt uses Firebase Authentication for secure sign-in. Google and Apple are federated providers. Email/password remains supported. Instagram is **profile data only** — not a login provider.
+ShiftIt uses Firebase Authentication for secure sign-in. Google, Apple, and Facebook are federated providers. Email/password remains supported. Instagram is **profile data only** — not a login provider.
 
 **Firebase project:** `carradar-bd6fb`
 
@@ -39,16 +39,44 @@ Enabling the Apple row in Firebase Console is **not always sufficient** for web 
 
 Apple secrets belong in Firebase Console only — not in `NEXT_PUBLIC_*` variables or git.
 
-### Common Apple error codes
+## Facebook
 
-| Code | Meaning |
-|------|---------|
-| `auth/operation-not-allowed` | Provider disabled on the **active** Firebase project, or `.env.local` points at the wrong project |
-| `auth/unauthorized-domain` | Current hostname not in Authorized domains |
-| `auth/internal-error` | Often incomplete Apple Service ID / key configuration |
-| `auth/popup-blocked` | Use redirect sign-in on mobile or after popup block |
+### Meta Developer app
 
-Development logs (safe, no tokens): browser console shows `provider`, `code`, `projectId`, `hostname` when Apple/Google fails.
+1. Create a [Meta developer app](https://developers.facebook.com/)
+2. Add the **Facebook Login** product
+3. Obtain **App ID** and **App Secret**
+4. Keep **App Secret** server-side / Firebase Console only — **never** add to `NEXT_PUBLIC_*`
+
+### Firebase Console (carradar-bd6fb)
+
+1. **Authentication** → **Sign-in method** → **Facebook**
+2. Enable Facebook
+3. Enter **App ID** and **App Secret**
+4. Copy the Firebase OAuth redirect URI shown in Console
+
+### Meta app settings
+
+1. **Facebook Login** → **Settings**
+2. Add the Firebase OAuth redirect URI to **Valid OAuth Redirect URIs**
+3. Add production domains to **App Domains** and **Site URL** as required:
+   - `shiftit.club`
+   - `www.shiftit.club`
+   - Your Vercel deployment domain
+4. Meta may require **business verification** or **app review** for public permissions and production access
+5. While the Meta app is in **Development** mode, add **Test Users** for QA
+
+### Client availability flag
+
+Production builds hide the Facebook button unless explicitly enabled:
+
+```env
+NEXT_PUBLIC_FACEBOOK_AUTH_ENABLED=true
+```
+
+In local development the button is visible by default so you can test setup errors. Set `NEXT_PUBLIC_FACEBOOK_AUTH_ENABLED=false` to hide it locally.
+
+ShiftIt requests **basic public profile** and **email** (when available) only. No friends list, pages, Instagram, ads, publishing, or business permissions.
 
 ## Authorized domains
 
@@ -59,13 +87,13 @@ Development logs (safe, no tokens): browser console shows `provider`, `code`, `p
 - `shiftit.club`
 - `www.shiftit.club`
 
-If you see `auth/unauthorized-domain`, add the current hostname. The login page and `/admin` diagnostics show the hostname in development.
+If you see `auth/unauthorized-domain`, add the current hostname.
 
 **LAN IP testing** (`http://192.168.x.x:3000`) is unreliable for OAuth redirects. Prefer:
 
 - `localhost` on the dev machine
 - a Vercel preview deployment
-- a trusted HTTPS tunnel (future)
+- a trusted HTTPS domain
 
 ## Redirect vs popup (mobile web)
 
@@ -75,13 +103,17 @@ If you see `auth/unauthorized-domain`, add the current hostname. The login page 
 
 Before redirect, the destination is stored in `sessionStorage` (`shiftit_auth_next`) and consumed after `getRedirectResult()` runs once.
 
-## Account linking (future)
+## Account collision
 
 `auth/account-exists-with-different-credential` means the email already exists with another method. Sign in with the original method first; multi-provider linking from Profile is planned later.
 
 ## Instagram
 
-Instagram handle is public profile data only — not a login provider.
+Instagram handle is public profile data only — not a login provider. Users add it from Profile after sign-in.
+
+## Guest browsing
+
+“Continue as Guest” does **not** create a Firebase anonymous user or Firestore profile. Guests may browse public routes only (map, clubs, events, members, shops). Protected actions redirect to `/login`.
 
 ## Deploy Firestore rules
 
@@ -97,10 +129,12 @@ firebase deploy --only firestore:rules,firestore:indexes,storage
 ## Manual test checklist
 
 1. `npm run firebase:check` → `overall: OK`
-2. `/login` — Google and Apple above email form
+2. `/login` — Google, Apple, Facebook (when enabled), email, and guest
 3. Google sign-in completes against **carradar-bd6fb**
 4. Apple sign-in — note exact error code if it fails
-5. Email/password still works
-6. `users/{uid}` creates without permission errors
-7. Notifications return empty list without permission-denied spam
-8. Admin account exists in **carradar-bd6fb** Auth + Firestore `users/{uid}`
+5. Facebook sign-in after Meta + Firebase configuration
+6. Email/password still works
+7. Forgot password sends reset email
+8. Guest routes to public `next` or `/`
+9. `users/{uid}` creates without permission errors
+10. Admin account exists in **carradar-bd6fb** Auth + Firestore `users/{uid}`

@@ -21,4 +21,8 @@ export const COLLECTIONS = {
   shareLinks: "share_links",
   userInvites: "user_invites",
   shareAnalytics: "share_analytics",
+  posts: "posts",
+  postComments: "post_comments",
+  postReactions: "post_reactions",
+  postReports: "post_reports",
 } as const;

@@ -5,7 +5,8 @@ export type ImagePresetId =
   | "announcement"
   | "profile_avatar"
   | "club_logo"
-  | "garage_primary";
+  | "garage_primary"
+  | "community_post";
 
 export type ImagePreset = {
   id: ImagePresetId;
@@ -62,6 +63,13 @@ export const IMAGE_PRESETS: Record<ImagePresetId, ImagePreset> = {
     id: "garage_primary",
     maxDimension: 1400,
     maxSizeMB: 0.32,
+    initialQuality: 0.78,
+    preferredFormat: "webp",
+  },
+  community_post: {
+    id: "community_post",
+    maxDimension: 1400,
+    maxSizeMB: 0.35,
     initialQuality: 0.78,
     preferredFormat: "webp",
   },

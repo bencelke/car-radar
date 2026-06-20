@@ -117,7 +117,7 @@ export function ConnectedAccountsCard({
 
       <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-[#64748B]">
         <AtSign className="mt-0.5 size-3 shrink-0" />
-        {t.profile.instagramProfileOnlyNote}
+        {t.profile.instagramPublicHelper}
       </p>
     </section>
   );

@@ -44,6 +44,10 @@ export function preferenceKeyForType(
       return "eventCancellations";
     case "event_checkin_open":
       return "checkInAlerts";
+    case "post_comment":
+      return "postComments";
+    case "community_post_official":
+      return "communityPosts";
     default:
       return null;
   }

@@ -527,6 +527,170 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    function postContextClubId(post) {
+      return post.clubId != null ? post.clubId : (
+        post.contextType == 'club' ? post.contextId : null
+      );
+    }
+
+    function canModeratePostContext(post) {
+      return isAdmin()
+        || (
+          post.contextType == 'club'
+          && postContextClubId(post) is string
+          && isClubManager(postContextClubId(post))
+        )
+        || (
+          post.contextType == 'event'
+          && post.eventId is string
+          && exists(/databases/$(database)/documents/car_events/$(post.eventId))
+          && (
+            get(/databases/$(database)/documents/car_events/$(post.eventId)).data.createdByUid == request.auth.uid
+            || (
+              eventClubId(post.eventId) is string
+              && isClubManager(eventClubId(post.eventId))
+            )
+          )
+        );
+    }
+
+    function postAuthorFieldsValid() {
+      return request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.authorDisplayName is string
+        && request.resource.data.body is string;
+    }
+
+    function postCreateValid() {
+      return signedIn()
+        && postAuthorFieldsValid()
+        && request.resource.data.status == 'published'
+        && request.resource.data.commentCount == 0
+        && request.resource.data.reactionCount == 0
+        && request.resource.data.isPinned == false
+        && (
+          !('isOfficial' in request.resource.data)
+          || request.resource.data.isOfficial == false
+          || canModeratePostContext(request.resource.data)
+        )
+        && (
+          request.resource.data.contextType == 'club'
+          || request.resource.data.contextType == 'event'
+        );
+    }
+
+    function postAuthorUpdateAllowed() {
+      return signedIn()
+        && resource.data.authorUid == request.auth.uid
+        && resource.data.status == 'published'
+        && request.resource.data.authorUid == resource.data.authorUid
+        && request.resource.data.contextType == resource.data.contextType
+        && request.resource.data.contextId == resource.data.contextId
+        && request.resource.data.isOfficial == resource.data.isOfficial
+        && request.resource.data.isPinned == resource.data.isPinned
+        && request.resource.data.commentCount == resource.data.commentCount
+        && request.resource.data.reactionCount == resource.data.reactionCount
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['authorUid', 'contextType', 'contextId', 'clubId', 'eventId', 'isOfficial', 'isPinned', 'commentCount', 'reactionCount', 'status', 'removedAt', 'removedByUid']);
+    }
+
+    match /posts/{postId} {
+      allow read: if resource.data.status == 'published'
+        || isAdmin()
+        || canModeratePostContext(resource.data);
+      allow create: if postCreateValid();
+      allow update: if isAdmin()
+        || canModeratePostContext(resource.data)
+        || postAuthorUpdateAllowed()
+        || (
+          signedIn()
+          && resource.data.status == 'published'
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['commentCount', 'updatedAt'])
+          && request.resource.data.commentCount == resource.data.commentCount + 1
+        )
+        || (
+          signedIn()
+          && resource.data.status == 'published'
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['commentCount', 'updatedAt'])
+          && request.resource.data.commentCount == resource.data.commentCount - 1
+          && request.resource.data.commentCount >= 0
+        )
+        || (
+          signedIn()
+          && resource.data.status == 'published'
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['reactionCount', 'updatedAt'])
+          && (
+            request.resource.data.reactionCount == resource.data.reactionCount + 1
+            || (
+              request.resource.data.reactionCount == resource.data.reactionCount - 1
+              && request.resource.data.reactionCount >= 0
+            )
+          )
+        );
+      allow delete: if false;
+    }
+
+    match /post_comments/{commentId} {
+      allow read: if resource.data.status == 'published'
+        || isAdmin()
+        || resource.data.authorUid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.status == 'published'
+        && request.resource.data.body is string
+        && request.resource.data.postId is string;
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.authorUid == request.auth.uid
+          && request.resource.data.authorUid == resource.data.authorUid
+          && request.resource.data.postId == resource.data.postId
+          && request.resource.data.status == resource.data.status
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['authorUid', 'postId', 'contextType', 'contextId', 'status', 'removedAt', 'removedByUid'])
+        )
+        || (
+          signedIn()
+          && canModeratePostContext(
+            get(/databases/$(database)/documents/posts/$(resource.data.postId)).data
+          )
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'removedAt', 'removedByUid', 'removalReason', 'updatedAt'])
+        );
+      allow delete: if false;
+    }
+
+    match /post_reactions/{reactionId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.type == 'like'
+        && reactionId == request.resource.data.postId + '_' + request.auth.uid
+        && exists(/databases/$(database)/documents/posts/$(request.resource.data.postId))
+        && get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.status == 'published';
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /post_reports/{reportId} {
+      allow read: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.reporterUid == request.auth.uid
+        );
+      allow create: if signedIn()
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.targetType is string
+        && request.resource.data.targetId is string
+        && request.resource.data.reason is string;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
     match /share_analytics/{eventId} {
       allow read: if isAdmin();
       allow create: if request.resource.data.entityType is string

@@ -41,6 +41,8 @@ export type NotificationType =
   | "club_followed"
   | "garage_followed"
   | "garage_build_updated"
+  | "post_comment"
+  | "community_post_official"
   | "system";
 
 export type NotificationStatus = "unread" | "read" | "archived";
@@ -51,6 +53,8 @@ export type NotificationPreferences = {
   eventUpdates?: boolean;
   eventCancellations?: boolean;
   checkInAlerts?: boolean;
+  postComments?: boolean;
+  communityPosts?: boolean;
 };
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
@@ -59,6 +63,8 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   eventUpdates: true,
   eventCancellations: true,
   checkInAlerts: true,
+  postComments: true,
+  communityPosts: true,
 };
 
 export type PlaceCategory =
@@ -678,6 +684,8 @@ export type UserProfile = {
   email: string;
   displayName?: string;
   photoURL?: string;
+  /** Latest federated provider photo — not used as public avatar when custom image exists. */
+  providerPhotoUrl?: string;
   authProviders?: string[];
   instagramHandle?: string;
   instagramUrl?: string;
@@ -691,3 +699,113 @@ export type UserProfile = {
   lastNotificationAt?: string;
   notificationPreferences?: NotificationPreferences;
 } & ProfileImageFields;
+
+export type PostContextType = "club" | "event" | "garage" | "community_zone";
+
+export type PostType =
+  | "discussion"
+  | "question"
+  | "car_update"
+  | "meet_photo"
+  | "club_news"
+  | "event_update"
+  | "route_update"
+  | "announcement";
+
+export type PostStatus = "published" | "hidden" | "removed" | "archived";
+
+export type CommunityPost = {
+  id: string;
+  contextType: PostContextType;
+  contextId: string;
+  clubId?: string;
+  eventId?: string;
+  authorUid: string;
+  authorDisplayName: string;
+  authorAvatarUrl?: string;
+  authorInstagramHandle?: string;
+  authorRoleSnapshot?: string;
+  type: PostType;
+  title?: string;
+  body: string;
+  imageUrl?: string;
+  imageStoragePath?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageSizeBytes?: number;
+  imageContentType?: string;
+  isOfficial: boolean;
+  isPinned: boolean;
+  status: PostStatus;
+  commentCount: number;
+  reactionCount: number;
+  reportCount?: number;
+  createdAt: string;
+  updatedAt?: string;
+  editedAt?: string;
+  removedAt?: string;
+  removedByUid?: string;
+  removalReason?: string;
+};
+
+export type PostCommentStatus = "published" | "hidden" | "removed";
+
+export type PostComment = {
+  id: string;
+  postId: string;
+  contextType: "club" | "event";
+  contextId: string;
+  authorUid: string;
+  authorDisplayName: string;
+  authorAvatarUrl?: string;
+  body: string;
+  parentCommentId?: string | null;
+  status: PostCommentStatus;
+  reactionCount?: number;
+  createdAt: string;
+  updatedAt?: string;
+  editedAt?: string;
+  removedAt?: string;
+  removedByUid?: string;
+  removalReason?: string;
+};
+
+export type PostReactionType = "like";
+
+export type PostReaction = {
+  id: string;
+  postId: string;
+  userId: string;
+  type: PostReactionType;
+  createdAt: string;
+};
+
+export type PostReportReason =
+  | "spam"
+  | "harassment"
+  | "hate"
+  | "unsafe"
+  | "illegal"
+  | "misinformation"
+  | "other";
+
+export type PostReportStatus = "pending" | "reviewed" | "dismissed" | "actioned";
+
+export type PostReportTargetType = "post" | "comment";
+
+export type PostReport = {
+  id: string;
+  targetType: PostReportTargetType;
+  targetId: string;
+  postId?: string;
+  contextType?: PostContextType;
+  contextId?: string;
+  reporterUid: string;
+  reason: PostReportReason;
+  details?: string;
+  status: PostReportStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedByUid?: string;
+  actionTaken?: string;
+};

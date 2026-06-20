@@ -3,8 +3,12 @@ import type {
   CarEvent,
   ClubAnnouncement,
   ClubFollow,
+  CommunityPost,
   EventCheckIn,
   EventRsvp,
+  PostComment,
+  PostReaction,
+  PostReport,
 } from "@/lib/types";
 
 const follows = new Map<string, ClubFollow>();
@@ -13,6 +17,10 @@ const rsvps = new Map<string, EventRsvp>();
 const checkIns = new Map<string, EventCheckIn>();
 const clubEvents = new Map<string, CarEvent>();
 const notifications = new Map<string, AppNotification>();
+const posts = new Map<string, CommunityPost>();
+const postComments = new Map<string, PostComment>();
+const postReactions = new Map<string, PostReaction>();
+const postReports = new Map<string, PostReport>();
 
 export function getMockFollows(): ClubFollow[] {
   return [...follows.values()];
@@ -79,4 +87,40 @@ export function updateMockNotification(
   const updated = { ...existing, ...patch, id: existing.id };
   notifications.set(id, updated);
   return updated;
+}
+
+export function getMockPosts(): CommunityPost[] {
+  return [...posts.values()];
+}
+
+export function setMockPost(doc: CommunityPost): void {
+  posts.set(doc.id, doc);
+}
+
+export function getMockPostComments(): PostComment[] {
+  return [...postComments.values()];
+}
+
+export function setMockPostComment(doc: PostComment): void {
+  postComments.set(doc.id, doc);
+}
+
+export function getMockPostReactions(): PostReaction[] {
+  return [...postReactions.values()];
+}
+
+export function setMockPostReaction(doc: PostReaction): void {
+  postReactions.set(doc.id, doc);
+}
+
+export function deleteMockPostReaction(id: string): void {
+  postReactions.delete(id);
+}
+
+export function getMockPostReports(): PostReport[] {
+  return [...postReports.values()];
+}
+
+export function setMockPostReport(doc: PostReport): void {
+  postReports.set(doc.id, doc);
 }

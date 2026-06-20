@@ -22,6 +22,7 @@ import {
   processSocialRedirectResult,
   resolveProviderEmail,
   signInWithApple as signInWithAppleSocial,
+  signInWithFacebook as signInWithFacebookSocial,
   signInWithGoogle as signInWithGoogleSocial,
   type SocialAuthProviderId,
 } from "@/lib/auth/social-auth";
@@ -48,6 +49,7 @@ type AuthContextValue = {
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (nextUrl?: string) => Promise<string | null>;
   signInWithApple: (nextUrl?: string) => Promise<string | null>;
+  signInWithFacebook: (nextUrl?: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   signOutUser: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -230,6 +232,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [runSocialSignIn]
   );
 
+  const signInWithFacebook = useCallback(
+    (nextUrl?: string) =>
+      runSocialSignIn("facebook", nextUrl, signInWithFacebookSocial),
+    [runSocialSignIn]
+  );
+
   const signOutUser = useCallback(async () => {
     if (!auth) {
       setUser(null);
@@ -281,6 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUpWithEmail,
       signInWithGoogle,
       signInWithApple,
+      signInWithFacebook,
       signOut: signOutUser,
       signOutUser,
       refreshProfile,
@@ -302,6 +311,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUpWithEmail,
       signInWithGoogle,
       signInWithApple,
+      signInWithFacebook,
       signOutUser,
       refreshProfile,
       clearPostAuthRedirect,

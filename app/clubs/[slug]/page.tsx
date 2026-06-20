@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -79,15 +80,21 @@ export default async function ClubDetailPage({ params }: PageProps) {
           ← Clubs
         </Link>
       </nav>
-      <ClubDetailView
-        club={club}
-        members={members}
-        events={relatedEvents}
-        shops={nearbyShops}
-        zones={clubZones}
-        announcements={announcements}
-        followerCount={followerCount}
-      />
+      <Suspense
+        fallback={
+          <div className="h-96 animate-pulse rounded-2xl border border-white/[0.06] bg-[#0B1118]/40" />
+        }
+      >
+        <ClubDetailView
+          club={club}
+          members={members}
+          events={relatedEvents}
+          shops={nearbyShops}
+          zones={clubZones}
+          announcements={announcements}
+          followerCount={followerCount}
+        />
+      </Suspense>
     </PageShell>
   );
 }

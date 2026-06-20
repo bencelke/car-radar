@@ -136,6 +136,7 @@ function buildCreatePayload(
     email: input.email ?? "",
     displayName: firestoreOptionalString(input.displayName),
     photoURL: firestoreOptionalString(input.photoURL),
+    providerPhotoUrl: firestoreOptionalString(input.photoURL),
     authProviders: input.authProviders?.length ? input.authProviders : undefined,
     role: "user",
     isAdmin: false,
@@ -165,6 +166,11 @@ function buildSafeUpdatePayload(
   const displayName = resolveDisplayName(existing, input.displayName);
   if (displayName) {
     payload.displayName = displayName;
+  }
+
+  const providerPhoto = firestoreOptionalString(input.photoURL);
+  if (providerPhoto) {
+    payload.providerPhotoUrl = providerPhoto;
   }
 
   const photoURL = resolvePhotoURL(existing, input.photoURL);

@@ -45,6 +45,10 @@ export default async function EventDetailPage({ params }: PageProps) {
     .filter((c) => c.city === event.city)
     .slice(0, 8);
 
+  const hostClub = event.clubId
+    ? allClubs.find((c) => c.id === event.clubId) ?? null
+    : null;
+
   return (
     <PageShell>
       <Link
@@ -57,6 +61,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         event={event}
         relatedShops={relatedShops}
         relatedClubs={relatedClubs}
+        hostClub={hostClub}
       />
     </PageShell>
   );

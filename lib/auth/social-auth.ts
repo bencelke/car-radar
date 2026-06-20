@@ -1,4 +1,5 @@
 import {
+  FacebookAuthProvider,
   GoogleAuthProvider,
   OAuthProvider,
   getRedirectResult,
@@ -14,7 +15,7 @@ import { auth } from "@/lib/firebase/client";
 
 export const AUTH_NEXT_STORAGE_KEY = "shiftit_auth_next";
 
-export type SocialAuthProviderId = "google" | "apple";
+export type SocialAuthProviderId = "google" | "apple" | "facebook";
 export type SocialAuthMethod = "popup" | "redirect";
 
 const googleProvider = new GoogleAuthProvider();
@@ -26,6 +27,10 @@ function appleProvider(): OAuthProvider {
   provider.addScope("name");
   return provider;
 }
+
+const facebookProvider = new FacebookAuthProvider();
+facebookProvider.addScope("email");
+facebookProvider.setCustomParameters({ display: "popup" });
 
 const POPUP_AUTH_ERROR_CODES = new Set([
   "auth/popup-closed-by-user",
@@ -87,7 +92,7 @@ function requireAuth(): Auth {
 }
 
 async function signInWithProvider(
-  provider: GoogleAuthProvider | OAuthProvider,
+  provider: GoogleAuthProvider | OAuthProvider | FacebookAuthProvider,
   nextUrl?: string,
   forceRedirect = false
 ): Promise<UserCredential | null> {
@@ -124,6 +129,13 @@ export async function signInWithApple(
   forceRedirect = false
 ): Promise<UserCredential | null> {
   return signInWithProvider(appleProvider(), nextUrl, forceRedirect);
+}
+
+export async function signInWithFacebook(
+  nextUrl?: string,
+  forceRedirect = false
+): Promise<UserCredential | null> {
+  return signInWithProvider(facebookProvider, nextUrl, forceRedirect);
 }
 
 /** Call once on app load to complete a pending redirect sign-in. */

@@ -59,3 +59,28 @@ export function triggerEventCancelled(eventId: string, _actorUid?: string): void
     eventId,
   }).catch((error) => logNotificationFailure("event_cancelled", error));
 }
+
+export function triggerPostComment(
+  comment: import("@/lib/types").PostComment,
+  post: import("@/lib/types").CommunityPost,
+  actorUid: string
+): void {
+  void runClientTrigger({
+    kind: "post_comment",
+    postId: post.id,
+    commentId: comment.id,
+    actorUid,
+  }).catch((error) => logNotificationFailure("post_comment", error));
+}
+
+export function triggerCommunityPostOfficial(
+  post: import("@/lib/types").CommunityPost,
+  actorUid: string
+): void {
+  if (!post.isOfficial) return;
+  void runClientTrigger({
+    kind: "community_post_official",
+    postId: post.id,
+    actorUid,
+  }).catch((error) => logNotificationFailure("community_post_official", error));
+}

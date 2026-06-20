@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { AdminClubsPanel } from "@/components/admin/AdminClubsPanel";
+import { CommunityModerationPanel } from "@/components/admin/CommunityModerationPanel";
 import { AdminEventsPanel } from "@/components/admin/AdminEventsPanel";
 import { AdminImportsPanel } from "@/components/admin/AdminImportsPanel";
 import { AdminMembersPanel } from "@/components/admin/AdminMembersPanel";
@@ -18,7 +19,8 @@ type AdminTab =
   | "members"
   | "events"
   | "imports"
-  | "submissions";
+  | "submissions"
+  | "moderation";
 
 type AdminWorkspaceProps = {
   initialSubmissions: Submission[];
@@ -39,6 +41,7 @@ export function AdminWorkspace({
     { id: "events", label: t.admin.tabEvents },
     { id: "imports", label: t.admin.tabImports },
     { id: "submissions", label: t.admin.tabSubmissions, badge: pendingCount },
+    { id: "moderation", label: t.admin.tabModeration },
   ];
 
   return (
@@ -76,6 +79,8 @@ export function AdminWorkspace({
         <AdminEventsPanel />
       ) : tab === "imports" ? (
         <AdminImportsPanel />
+      ) : tab === "moderation" ? (
+        <CommunityModerationPanel />
       ) : (
         <SubmissionReviewPanel initialSubmissions={initialSubmissions} />
       )}
