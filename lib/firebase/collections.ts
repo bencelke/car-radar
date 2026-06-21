@@ -25,4 +25,6 @@ export const COLLECTIONS = {
   postComments: "post_comments",
   postReactions: "post_reactions",
   postReports: "post_reports",
+  profileClaims: "profile_claims",
+  correctionRequests: "correction_requests",
 } as const;

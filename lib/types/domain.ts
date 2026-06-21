@@ -113,6 +113,12 @@ export type CarShop = BasePlace & {
   rating?: number;
   reviewCount?: number;
   sponsorLevel?: SponsorLevel;
+  claimStatus?: ListingClaimStatus;
+  ownerUid?: string | null;
+  managerUids?: string[];
+  createdByUid?: string | null;
+  source?: ListingSource;
+  visibility?: ListingVisibility;
 };
 
 export type CarEvent = {
@@ -181,12 +187,95 @@ export type Community = {
 
 export type ClubMemberStatus = "pending" | "approved" | "rejected" | "archived";
 
-/** Profile claim by a signed-in Firebase user (flow not implemented yet). */
-export type MemberClaimStatus =
+/** Ownership claim state for public listings (clubs, members/garages, shops). */
+export type ListingClaimStatus =
   | "unclaimed"
   | "pending"
   | "claimed"
+  | "disputed"
   | "rejected";
+
+/** @deprecated Prefer `ListingClaimStatus` */
+export type MemberClaimStatus = ListingClaimStatus;
+
+export type ListingSource =
+  | "admin_seed"
+  | "user_submission"
+  | "club_import"
+  | "manual";
+
+export type ListingVisibility = "public" | "draft" | "archived";
+
+export type ProfileClaimTargetType = "club" | "member" | "shop";
+
+export type ProfileClaimStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "needs_more_info"
+  | "cancelled";
+
+export type ProfileClaimProofType =
+  | "instagram_dm"
+  | "club_manager_invite"
+  | "email_match"
+  | "manual"
+  | "other";
+
+export type ProfileClaim = {
+  id: string;
+  targetType: ProfileClaimTargetType;
+  targetId: string;
+  targetName?: string | null;
+
+  requestedByUid: string;
+  requesterEmail?: string | null;
+  requesterName?: string | null;
+
+  proofType?: ProfileClaimProofType;
+  proofText?: string | null;
+  proofUrl?: string | null;
+
+  status: ProfileClaimStatus;
+  reviewedByUid?: string | null;
+  reviewedAt?: unknown;
+  reviewNote?: string | null;
+
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
+
+export type CorrectionRequestTargetType = "club" | "member" | "shop" | "event";
+
+export type CorrectionRequestType =
+  | "correction"
+  | "removal"
+  | "duplicate"
+  | "privacy";
+
+export type CorrectionRequestStatus =
+  | "pending"
+  | "reviewed"
+  | "resolved"
+  | "rejected";
+
+export type CorrectionRequest = {
+  id: string;
+  targetType: CorrectionRequestTargetType;
+  targetId: string;
+  targetName?: string | null;
+  requestType: CorrectionRequestType;
+  requesterUid?: string | null;
+  requesterName?: string | null;
+  requesterEmail?: string | null;
+  message: string;
+  status: CorrectionRequestStatus;
+  reviewedByUid?: string | null;
+  reviewedAt?: unknown;
+  reviewNote?: string | null;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
 
 export type MemberRole =
   | "member"
@@ -233,10 +322,13 @@ export type Club = {
   sourceSubmissionId?: string;
   createdByUid?: string;
   updatedByUid?: string;
-  ownerUid?: string;
+  ownerUid?: string | null;
   adminUids?: string[];
   managerUids?: string[];
   followerCount?: number;
+  claimStatus?: ListingClaimStatus;
+  source?: ListingSource;
+  visibility?: ListingVisibility;
 };
 
 export type ClubMember = {
@@ -275,10 +367,12 @@ export type ClubMember = {
   featured?: boolean;
   claimStatus?: MemberClaimStatus;
   claimedByUid?: string | null;
+  source?: ListingSource;
+  visibility?: ListingVisibility;
   createdAt?: string;
   updatedAt?: string;
   sourceSubmissionId?: string;
-  createdByUid?: string;
+  createdByUid?: string | null;
   updatedByUid?: string;
 };
 
@@ -667,11 +761,18 @@ export type CreateSubmissionInput = Omit<
   "id" | "status" | "createdAt" | "updatedAt"
 >;
 
-export type UserRole = "admin" | "user";
+export type UserRole = "admin" | "user" | "club_manager" | "founder";
+
+export type UserAdminRole = "founder" | "admin" | "moderator";
 
 /** Image metadata only — binary lives in Firebase Storage */
 export type ProfileImageFields = {
   avatarUrl?: string;
+  avatarStoragePath?: string;
+  avatarSource?: "uploaded" | "provider" | "fallback" | null;
+  avatarUpdatedAt?: string;
+  avatarSizeBytes?: number;
+  avatarContentType?: string;
   imageUrl?: string;
   imageStoragePath?: string;
   imageUpdatedAt?: string;
@@ -683,6 +784,8 @@ export type UserProfile = {
   uid?: string;
   email: string;
   displayName?: string;
+  /** Optional public-facing name when different from displayName. */
+  publicName?: string;
   photoURL?: string;
   /** Latest federated provider photo — not used as public avatar when custom image exists. */
   providerPhotoUrl?: string;
@@ -692,6 +795,8 @@ export type UserProfile = {
   instagramVerificationStatus?: "unverified" | "pending" | "verified";
   role: UserRole;
   isAdmin?: boolean;
+  adminRole?: UserAdminRole;
+  title?: string;
   createdAt?: string;
   updatedAt?: string;
   lastLoginAt?: string;

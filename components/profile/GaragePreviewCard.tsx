@@ -9,8 +9,9 @@ import {
   statChipClass,
 } from "@/components/profile/profile-ui";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { displayNameFromUserLike } from "@/lib/auth/user-display";
 import { buildStageLabel } from "@/lib/garage/labels";
-import type { GarageCar, GarageProfile } from "@/lib/types";
+import type { GarageCar, GarageProfile, UserProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type GaragePreviewCardProps = {
@@ -19,6 +20,8 @@ type GaragePreviewCardProps = {
   modCount: number;
   updateCount: number;
   loading?: boolean;
+  profile?: UserProfile | null;
+  authDisplayName?: string | null;
 };
 
 export function GaragePreviewCard({
@@ -27,8 +30,13 @@ export function GaragePreviewCard({
   modCount,
   updateCount,
   loading,
+  profile,
+  authDisplayName,
 }: GaragePreviewCardProps) {
   const { t } = useLocale();
+  const ownerName = profile
+    ? displayNameFromUserLike(profile, { displayName: authDisplayName })
+    : garage?.displayName;
 
   if (loading) {
     return (
@@ -117,7 +125,7 @@ export function GaragePreviewCard({
           <h2 className="mt-1 font-heading text-xl font-bold text-[#F8FAFC]">
             {title}
           </h2>
-          <p className="mt-1 text-sm text-[#94A3B8]">{garage.displayName}</p>
+          <p className="mt-1 text-sm text-[#94A3B8]">{ownerName}</p>
 
           <div className="mt-3 flex flex-wrap gap-2">
             {car?.horsepower != null ? (

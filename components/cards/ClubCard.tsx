@@ -64,7 +64,7 @@ export function ClubCard({ club }: ClubCardProps) {
         ) : null}
         {club.featured ? (
           <span className="absolute left-2 top-2 rounded-full border border-[#FACC15]/40 bg-[#0B1118]/80 px-2 py-0.5 text-[9px] font-semibold text-[#FDE047] backdrop-blur-sm">
-            Featured
+            {t.clubs.featured}
           </span>
         ) : null}
       </div>

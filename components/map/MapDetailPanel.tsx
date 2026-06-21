@@ -1,11 +1,15 @@
 "use client";
 
-import { ExternalLink, MapPin, Share2, ShieldCheck } from "lucide-react";
+import { ExternalLink, MapPin, Plus, Share2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 import { GlassPanel } from "@/components/dashboard/glass-panel";
+import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { MapMemberDetail } from "@/components/map/MapMemberDetail";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { Button } from "@/components/ui/button";
+import { submitRoute } from "@/lib/config/routes";
+import { claimPagePath } from "@/lib/claims/claim-utils";
 import {
   googleMapsDirectionsUrl,
   metaNumber,
@@ -63,6 +67,7 @@ function formatEventTime(iso?: string): string | null {
   });
 }
 
+
 export function MapDetailPanel({
   item,
   className,
@@ -71,21 +76,22 @@ export function MapDetailPanel({
   const { t } = useLocale();
   const isFloating = variant === "floating";
   const panelExtras = isFloating ? floatingPanelClass : undefined;
-  const emptyMinH = isFloating ? "min-h-[160px]" : "min-h-[200px] lg:min-h-0 lg:w-80";
 
   if (!item) {
     return (
-      <GlassPanel
-        className={cn(
-          "flex flex-col items-center justify-center p-6 text-center",
-          emptyMinH,
-          panelExtras,
-          className
-        )}
-      >
-        <MapPin className="mb-3 size-8 text-white/20" />
-        <p className="text-sm text-white/45">{t.map.noSelection}</p>
-      </GlassPanel>
+      <EmptyStateCard
+        icon={MapPin}
+        title={t.map.selectMarker}
+        description={t.map.selectMarkerHint}
+        actions={[
+          {
+            label: t.map.submitPlace,
+            href: submitRoute(),
+            variant: "primary",
+          },
+        ]}
+        className={cn("min-h-[280px] lg:min-h-[360px]", panelExtras, className)}
+      />
     );
   }
 
@@ -93,8 +99,7 @@ export function MapDetailPanel({
     return (
       <GlassPanel
         className={cn(
-          "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5",
-          !isFloating && "lg:w-80 lg:shrink-0",
+          "flex max-h-[min(640px,calc(100vh-12rem))] flex-col gap-4 overflow-y-auto p-5",
           panelExtras,
           className
         )}
@@ -116,11 +121,11 @@ export function MapDetailPanel({
   }
 
   const detailHref = mapItemDetailPath(item);
-
   const buildTags = metaString(item, "buildTags");
   const services = metaString(item, "services");
   const rating = metaNumber(item, "rating");
   const interested = metaNumber(item, "interestedCount");
+  const going = metaNumber(item, "goingCount");
   const memberCount = metaNumber(item, "memberCount");
   const organizer = metaString(item, "organizerName");
   const startTime = formatEventTime(metaString(item, "startTime"));
@@ -129,8 +134,7 @@ export function MapDetailPanel({
   return (
     <GlassPanel
       className={cn(
-        "flex max-h-[min(520px,70vh)] flex-col gap-4 overflow-y-auto p-5",
-        !isFloating && "lg:w-80 lg:shrink-0",
+        "flex max-h-[min(640px,calc(100vh-12rem))] flex-col gap-4 overflow-y-auto p-5",
         panelExtras,
         className
       )}
@@ -150,34 +154,56 @@ export function MapDetailPanel({
             <span className="text-[10px] text-blue-300/90">{statusLabel}</span>
           ) : null}
         </div>
-        <h2 className="font-heading mt-2 text-lg font-semibold text-white">
+        <h2 className="font-heading mt-2 text-lg font-semibold text-[#F8FAFC]">
           {item.title}
         </h2>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-[#64748B]">
           {item.category}
           {item.area ? ` · ${item.area}` : ""} · {item.city}, {item.country}
         </p>
       </div>
 
       {item.description ? (
-        <p className="text-sm leading-relaxed text-white/65">{item.description}</p>
+        <p className="text-sm leading-relaxed text-[#94A3B8]">{item.description}</p>
+      ) : null}
+
+      {startTime ? (
+        <p className="text-xs text-purple-200/80">{startTime}</p>
+      ) : null}
+
+      {going != null && going > 0 ? (
+        <p className="text-xs text-[#86EFAC]">
+          {going.toLocaleString()} {t.community.going}
+        </p>
+      ) : null}
+
+      {interested != null && interested > 0 ? (
+        <p className="text-xs text-[#93C5FD]">
+          {interested.toLocaleString()} {t.community.interested}
+        </p>
+      ) : null}
+
+      {memberCount != null && memberCount > 0 ? (
+        <p className="text-xs text-[#64748B]">
+          {memberCount.toLocaleString()} {t.clubs.members}
+        </p>
       ) : null}
 
       {buildTags ? (
         <div>
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
             {t.map.buildLabel}
           </p>
-          <p className="text-xs text-white/60">{buildTags}</p>
+          <p className="text-xs text-[#94A3B8]">{buildTags}</p>
         </div>
       ) : null}
 
       {services ? (
         <div>
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
             {t.map.servicesLabel}
           </p>
-          <p className="text-xs text-white/60">{services}</p>
+          <p className="text-xs text-[#94A3B8]">{services}</p>
         </div>
       ) : null}
 
@@ -185,24 +211,8 @@ export function MapDetailPanel({
         <p className="text-xs text-amber-200/90">★ {rating.toFixed(1)}</p>
       ) : null}
 
-      {startTime ? (
-        <p className="text-xs text-purple-200/80">{startTime}</p>
-      ) : null}
-
-      {interested != null && interested > 0 ? (
-        <p className="text-xs text-white/50">
-          {interested.toLocaleString()} interested
-        </p>
-      ) : null}
-
       {organizer ? (
-        <p className="text-xs text-white/50">{organizer}</p>
-      ) : null}
-
-      {memberCount != null && memberCount > 0 ? (
-        <p className="text-xs text-white/50">
-          {memberCount.toLocaleString()} members
-        </p>
+        <p className="text-xs text-[#64748B]">{organizer}</p>
       ) : null}
 
       {item.tags && item.tags.length > 0 ? (
@@ -210,7 +220,7 @@ export function MapDetailPanel({
           {item.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-md border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] text-white/55"
+              className="rounded-md border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] text-[#94A3B8]"
             >
               {tag}
             </span>
@@ -218,12 +228,23 @@ export function MapDetailPanel({
         </div>
       ) : null}
 
-      <div className="mt-auto flex flex-col gap-2">
+      <div className="mt-auto flex flex-col gap-2 pt-2">
+        {detailHref ? (
+          <Button
+            nativeButton={false}
+            render={<Link href={detailHref} />}
+            size="sm"
+            className="min-h-11 w-full border border-[#EF4444]/40 bg-[#EF4444]/15 text-[#F8FAFC] hover:bg-[#EF4444]/25"
+          >
+            {item.type === "club" ? t.clubs.viewClub : t.detail.viewDetails}
+          </Button>
+        ) : null}
+
         <a
           href={googleMapsDirectionsUrl(item.lat, item.lng)}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-blue-500/20"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-blue-500/20"
         >
           <ExternalLink className="size-4" />
           {t.map.directions}
@@ -234,10 +255,10 @@ export function MapDetailPanel({
             href={normalizeUrl(item.website)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-[#CBD5E1] hover:bg-white/10"
           >
             <ExternalLink className="size-4" />
-            {t.map.openWebsite}
+            {t.map.website}
           </a>
         ) : null}
 
@@ -246,20 +267,32 @@ export function MapDetailPanel({
             href={normalizeUrl(item.instagram)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-[#CBD5E1] hover:bg-white/10"
           >
             <Share2 className="size-4" />
-            {t.map.openInstagram}
+            {t.map.instagram}
           </a>
         ) : null}
 
-        {detailHref ? (
-          <Link
-            href={detailHref}
-            className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:bg-white/10"
+        {item.type === "club" && !item.verified ? (
+          <Button
+            nativeButton={false}
+            render={
+              <Link
+                href={claimPagePath(
+                  "club",
+                  metaString(item, "entityId") ??
+                    item.id.replace(/^(shop|event|club|member|zone)-/, "")
+                )}
+              />
+            }
+            size="sm"
+            variant="outline"
+            className="min-h-11 w-full border-white/[0.1] bg-[#151B24]/80 text-[#CBD5E1]"
           >
-            {t.detail.viewDetails}
-          </Link>
+            <Plus className="mr-1.5 size-4" />
+            {t.claims.claimThisClub}
+          </Button>
         ) : null}
       </div>
     </GlassPanel>

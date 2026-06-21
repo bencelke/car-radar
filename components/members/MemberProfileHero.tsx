@@ -1,15 +1,18 @@
 "use client";
 
-import { BadgeCheck, Pencil, Share2 } from "lucide-react";
+import { BadgeCheck, Share2 } from "lucide-react";
 import Link from "next/link";
 
+import { ClaimProfileButton } from "@/components/claims/ClaimProfileButton";
+import { ClaimStatusBadge } from "@/components/claims/ClaimStatusBadge";
+import { CorrectionRequestLink } from "@/components/claims/CorrectionRequestLink";
 import { FollowPlaceholderButton } from "@/components/members/FollowPlaceholderButton";
 import { MemberProfileCarImage } from "@/components/members/MemberProfileCarImage";
 import { MemberRoleBadge } from "@/components/members/MemberRoleBadge";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { memberCarLine } from "@/lib/members/roles";
 import type { Club, ClubMember } from "@/lib/types";
-import { clubDetailPath, correctionSubmitPath } from "@/lib/utils/entity-paths";
+import { clubDetailPath } from "@/lib/utils/entity-paths";
 import {
   formatMemberHandleLabel,
   memberInstagramUrl,
@@ -33,11 +36,6 @@ export function MemberProfileHero({ member, club }: MemberProfileHeroProps) {
   const carTitle = member.carName?.trim();
   const carLine = memberCarLine(member);
   const instagramHref = memberInstagramUrl(member);
-  const correctionHref = correctionSubmitPath(
-    "member",
-    member.displayName,
-    member.id
-  );
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#0B1118] via-[#0F172A]/98 to-[#151B24]/90 p-3 backdrop-blur-xl sm:p-4">
@@ -54,6 +52,7 @@ export function MemberProfileHero({ member, club }: MemberProfileHeroProps) {
             {t.members.verifiedByClub}
           </span>
         ) : null}
+        <ClaimStatusBadge record={member} />
       </div>
 
       <div className="relative grid gap-3 sm:grid-cols-[minmax(140px,220px)_minmax(0,1fr)] sm:items-start sm:gap-4">
@@ -112,6 +111,11 @@ export function MemberProfileHero({ member, club }: MemberProfileHeroProps) {
               </a>
             ) : null}
             <FollowPlaceholderButton className="[&_button]:h-9" />
+            <ClaimProfileButton
+              targetType="member"
+              targetId={member.id}
+              record={member}
+            />
             {club ? (
               <Link
                 href={clubDetailPath(club)}
@@ -123,16 +127,17 @@ export function MemberProfileHero({ member, club }: MemberProfileHeroProps) {
                 {t.members.viewClub}
               </Link>
             ) : null}
-            <Link
-              href={correctionHref}
-              className={cn(
-                actionBtnClass,
-                "border-white/10 bg-[#151B24]/50 text-[#94A3B8] hover:border-white/20 hover:text-[#F8FAFC]"
-              )}
-            >
-              <Pencil className="size-3.5 shrink-0" />
-              {t.members.submitCorrection}
-            </Link>
+            <CorrectionRequestLink
+              targetType="member"
+              targetId={member.id}
+              targetName={member.displayName}
+            />
+            <CorrectionRequestLink
+              targetType="member"
+              targetId={member.id}
+              targetName={member.displayName}
+              requestType="removal"
+            />
           </div>
         </div>
       </div>

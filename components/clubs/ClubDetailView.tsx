@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { ClubAdminTools } from "@/components/clubs/ClubAdminTools";
+import { AdminManageClubLink } from "@/components/admin/AdminManageLinks";
 import { ClubDetailTabs } from "@/components/clubs/ClubDetailTabs";
 import { ClubFollowButton } from "@/components/clubs/ClubFollowButton";
 import { ClubLocationPanel } from "@/components/clubs/ClubLocationPanel";
@@ -83,12 +83,7 @@ export function ClubDetailView({
             <ClubStatsPanel club={club} memberCount={members.length} />
             <ClubSocialPanel club={club} />
             <ClubLocationPanel club={club} />
-            <ClubAdminTools
-              club={club}
-              coverSrc={heroCoverSrc}
-              onClubUpdate={setClub}
-              onCoverSaved={handleCoverSaved}
-            />
+            <AdminManageClubLink clubId={club.id} className="w-full" />
           </aside>
         ) : null}
 

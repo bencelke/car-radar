@@ -48,6 +48,13 @@ service firebase.storage {
         && isImageUpload();
     }
 
+    match /users/{uid}/avatar/{fileName} {
+      allow read: if true;
+      allow write: if signedIn()
+        && request.auth.uid == uid
+        && isImageUpload();
+    }
+
     match /profile-images/member/{memberId}/{fileName} {
       allow read: if true;
       allow write: if isAdmin() && isImageUpload();

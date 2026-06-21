@@ -14,6 +14,7 @@
     "test:firebase-project": "node --test scripts/dev/test-firebase-project-check.mjs",
     "test:garage-onboarding": "node --test scripts/dev/test-garage-onboarding-schema.mjs",
     "dev:create-admin": "node scripts/dev/create-admin-user.mjs",
+    "seed:founders": "node scripts/dev/seed-founders.mjs",
     "dev:optimize-brand": "node scripts/dev/optimize-brand-logo.mjs"
   },
   "dependencies": {

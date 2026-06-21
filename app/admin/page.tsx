@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
 
-import { AdminGate } from "@/components/admin/AdminGate";
+import { AdminOverview } from "@/components/admin/AdminOverview";
 import { brand } from "@/lib/config/brand";
-import { getSubmissionsByStatus } from "@/lib/repositories/submissions";
 
 export const metadata: Metadata = {
-  title: "Admin",
-  description: `${brand.appName} admin dashboard.`,
+  title: `Founder Console · ${brand.metadata.siteName}`,
+  description: `${brand.appName} admin control center.`,
 };
 
-export default async function AdminPage() {
-  const submissions = await getSubmissionsByStatus("all");
-
-  return <AdminGate initialSubmissions={submissions} />;
+export default function AdminOverviewPage() {
+  return <AdminOverview />;
 }

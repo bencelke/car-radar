@@ -437,6 +437,11 @@ export function buildClubFromDetails(
     lng: coords.lng,
     createdAt: now,
     updatedAt: now,
+    claimStatus: "unclaimed",
+    ownerUid: null,
+    managerUids: [],
+    source: "club_import",
+    visibility: "public",
   };
 }
 
@@ -487,6 +492,8 @@ export function buildClubMemberFromPreview(
     featured: false,
     claimStatus: "unclaimed",
     claimedByUid: null,
+    source: "club_import",
+    visibility: "public",
     createdAt: now,
     updatedAt: now,
   };

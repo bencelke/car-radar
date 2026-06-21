@@ -14,7 +14,7 @@ export default async function ClubsPage() {
   const clubs = await getApprovedClubs();
 
   return (
-    <PageShell>
+    <PageShell maxWidth="default">
       <ClubsDirectory clubs={clubs} />
     </PageShell>
   );

@@ -6,6 +6,7 @@ import {
   firestoreOptionalString,
   sanitizeFirestoreData,
 } from "@/lib/firebase/sanitize-firestore";
+import { isAdminUser } from "@/lib/auth/permissions";
 import type { ProfileImageFields, UserProfile } from "@/lib/types";
 import { DEFAULT_NOTIFICATION_PREFERENCES } from "@/lib/types";
 
@@ -65,15 +66,16 @@ function logUserProfileError(
 }
 
 export function isProfileAdmin(profile: UserProfile | null | undefined): boolean {
-  if (!profile) return false;
-  return profile.role === "admin" || profile.isAdmin === true;
+  return isAdminUser(profile);
 }
 
 function hasCustomProfileImage(profile: UserProfile): boolean {
   return Boolean(
-    profile.avatarUrl?.trim() ||
-      profile.imageUrl?.trim() ||
-      profile.imageStoragePath?.trim()
+    profile.avatarSource === "uploaded" ||
+      firestoreOptionalString(profile.avatarUrl) ||
+      firestoreOptionalString(profile.avatarStoragePath) ||
+      firestoreOptionalString(profile.imageUrl) ||
+      firestoreOptionalString(profile.imageStoragePath)
   );
 }
 
@@ -90,9 +92,12 @@ function resolveDisplayName(
   existing: UserProfile | null,
   incoming?: string | null
 ): string | undefined {
+  const existingName = firestoreOptionalString(existing?.displayName);
+  if (existingName) return existingName;
+
   const next = firestoreOptionalString(incoming);
   if (next) return next;
-  return existing?.displayName;
+  return undefined;
 }
 
 function resolvePhotoURL(
@@ -334,6 +339,30 @@ export async function updateUserInstagramProfile(
       instagramHandle: handle,
       instagramUrl: url,
       instagramVerificationStatus: "unverified",
+      updatedAt: now,
+    }),
+    { merge: true }
+  );
+}
+
+export async function updateUserProfileDisplayName(
+  uid: string,
+  displayName: string
+): Promise<void> {
+  if (!db) {
+    throw new Error("FIREBASE_NOT_CONFIGURED");
+  }
+
+  const trimmed = displayName.trim();
+  if (!trimmed) {
+    throw new Error("DISPLAY_NAME_REQUIRED");
+  }
+
+  const now = new Date().toISOString();
+  await setDoc(
+    doc(db, COLLECTIONS.users, uid),
+    sanitizeFirestoreData({
+      displayName: trimmed,
       updatedAt: now,
     }),
     { merge: true }

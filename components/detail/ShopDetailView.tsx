@@ -1,6 +1,8 @@
 "use client";
 
-import { CorrectionLink } from "@/components/detail/CorrectionLink";
+import { ClaimProfileButton } from "@/components/claims/ClaimProfileButton";
+import { ClaimStatusBadge } from "@/components/claims/ClaimStatusBadge";
+import { CorrectionRequestLink } from "@/components/claims/CorrectionRequestLink";
 import { DetailHero } from "@/components/detail/DetailHero";
 import { DirectionsButton } from "@/components/detail/DirectionsButton";
 import { InfoGrid } from "@/components/detail/InfoGrid";
@@ -56,6 +58,9 @@ export function ShopDetailView({
         location={location}
         gradientClassName="from-red-600/40 via-[#111827] to-orange-900/30"
       >
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <ClaimStatusBadge record={shop} />
+        </div>
         {shop.description ? (
           <p className="text-sm leading-relaxed text-[#94A3B8]">
             {shop.description}
@@ -116,11 +121,20 @@ export function ShopDetailView({
         </RelatedSection>
       </div>
 
-      <CorrectionLink
-        targetType="shop"
-        targetName={shop.name}
-        entityId={shop.id}
-      />
+      <div className="flex flex-wrap gap-2">
+        <ClaimProfileButton targetType="shop" targetId={shop.id} record={shop} />
+        <CorrectionRequestLink
+          targetType="shop"
+          targetId={shop.id}
+          targetName={shop.name}
+        />
+        <CorrectionRequestLink
+          targetType="shop"
+          targetId={shop.id}
+          targetName={shop.name}
+          requestType="removal"
+        />
+      </div>
     </div>
   );
 }

@@ -9,9 +9,11 @@ import {
   type PostImageValue,
 } from "@/components/community/PostImageUploader";
 import { PostTypeSelector } from "@/components/community/PostTypeSelector";
+import { UserAvatar } from "@/components/profile/UserAvatar";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { canPostOfficial, OFFICIAL_POST_TYPES } from "@/lib/community/post-permissions";
+import { getAvatarUrlFromProfile } from "@/lib/auth/user-avatar";
 import { createPost, type PostActor } from "@/lib/repositories/posts";
 import { generateId } from "@/lib/repositories/utils";
 import type { CarEvent, Club, ClubMember, CommunityPost, PostType } from "@/lib/types";
@@ -43,7 +45,7 @@ export function PostComposer({
   onPublished,
 }: PostComposerProps) {
   const { t } = useLocale();
-  const { user, isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [body, setBody] = useState("");
   const [title, setTitle] = useState("");
@@ -80,7 +82,7 @@ export function PostComposer({
   const actor: PostActor = {
     uid: user.uid,
     displayName: user.displayName ?? user.email ?? "Driver",
-    avatarUrl: user.photoURL ?? undefined,
+    avatarUrl: getAvatarUrlFromProfile(profile, user) ?? undefined,
     isGlobalAdmin: isAdmin,
     roleSnapshot: membership?.roleLabel ?? membership?.role,
   };
@@ -127,8 +129,6 @@ export function PostComposer({
     }
   }
 
-  const avatarInitial = (user.displayName ?? user.email ?? "D").slice(0, 1).toUpperCase();
-
   if (!expanded) {
     return (
       <button
@@ -136,18 +136,7 @@ export function PostComposer({
         onClick={() => setExpandedState(true)}
         className="flex min-h-[3.25rem] w-full items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#151B24]/50 px-4 text-left transition hover:border-white/[0.12] hover:bg-[#151B24]/70"
       >
-        {user.photoURL ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.photoURL}
-            alt=""
-            className="size-9 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#3B82F6]/20 text-sm font-semibold text-[#93C5FD]">
-            {avatarInitial}
-          </div>
-        )}
+        <UserAvatar profile={profile} authUser={user} size="sm" rounded="full" />
         <span className="min-w-0 flex-1 truncate text-sm text-[#94A3B8]">
           {collapsedLabel}
         </span>
@@ -159,18 +148,7 @@ export function PostComposer({
   return (
     <div className="space-y-3 rounded-2xl border border-white/[0.08] bg-[#0B1118]/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div className="flex items-center gap-3">
-        {user.photoURL ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.photoURL}
-            alt=""
-            className="size-9 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex size-9 items-center justify-center rounded-full bg-[#3B82F6]/20 text-sm font-semibold text-[#93C5FD]">
-            {avatarInitial}
-          </div>
-        )}
+        <UserAvatar profile={profile} authUser={user} size="sm" rounded="full" />
         <p className="text-xs font-medium text-[#94A3B8]">{t.communityPosts.writePost}</p>
       </div>
       <PostTypeSelector

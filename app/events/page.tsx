@@ -14,7 +14,7 @@ export default async function EventsPage() {
   const events = await getPublicEvents();
 
   return (
-    <PageShell>
+    <PageShell maxWidth="default">
       <MeetFinderClient events={events} />
     </PageShell>
   );

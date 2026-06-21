@@ -8,7 +8,7 @@ import { loadMapItems } from "@/lib/data/map-items";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Map",
+  title: "Discovery Map",
   description: `Explore the car culture map on ${brand.appName}.`,
 };
 
@@ -16,7 +16,7 @@ export default async function MapPage() {
   const items = await loadMapItems();
 
   return (
-    <PageShell className="px-0 py-0 md:px-4 md:py-6 lg:px-6">
+    <PageShell maxWidth="wide" className="px-0 py-0 md:px-4 md:py-5 lg:px-6 lg:py-6">
       <MapPageClient items={items} />
     </PageShell>
   );

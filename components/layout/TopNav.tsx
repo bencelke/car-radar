@@ -12,15 +12,9 @@ import { MobileNavSheet } from "@/components/mobile/MobileNavSheet";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/button";
-import { brand } from "@/lib/config/brand";
+import { PUBLIC_NAV_ITEMS, ROUTES, submitRoute } from "@/lib/config/routes";
+import { isNavItemActive } from "@/lib/navigation/is-nav-active";
 import { cn } from "@/lib/utils";
-
-const navHrefs = [
-  { key: "map" as const, href: "/map" },
-  { key: "events" as const, href: "/events" },
-  { key: "shops" as const, href: "/shops" },
-  { key: "clubs" as const, href: "/clubs" },
-];
 
 export function TopNav() {
   const pathname = usePathname();
@@ -28,20 +22,13 @@ export function TopNav() {
   const { user, loading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const navLabels = {
-    map: t.nav.map,
-    events: t.nav.events,
-    shops: t.nav.shops,
-    clubs: t.nav.clubs,
-  };
-
   return (
     <>
       <header
         data-mobile-header
-        className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#05070A]/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl"
+        className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#05070A]/92 pt-[env(safe-area-inset-top)] backdrop-blur-xl"
       >
-        <div className="mx-auto flex h-14 max-w-[1920px] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:h-16 lg:h-[4.25rem] lg:gap-4 lg:px-6">
+        <div className="mx-auto flex h-14 max-w-[1920px] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:h-[3.75rem] lg:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
@@ -54,9 +41,9 @@ export function TopNav() {
             </button>
 
             <Link
-              href="/"
-              className="group flex min-w-0 max-w-[min(42vw,160px)] shrink-0 items-center sm:max-w-none md:max-w-none"
-              aria-label={brand.appName}
+              href={ROUTES.home}
+              className="group flex min-w-0 max-w-[min(42vw,160px)] shrink-0 cursor-pointer items-center sm:max-w-none md:max-w-none"
+              aria-label={t.nav.goToHome}
             >
               <ShiftItLogo
                 variant="nav"
@@ -65,28 +52,26 @@ export function TopNav() {
             </Link>
           </div>
 
-          <nav className="hidden items-center gap-1 md:flex">
-            {navHrefs.map((item) => {
-              const active =
-                item.href === "/map"
-                  ? pathname === "/" || pathname === "/map"
-                  : pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`) ||
-                    (item.href === "/clubs" && pathname === "/communities");
+          <nav
+            className="hidden items-center gap-0.5 md:flex"
+            aria-label={t.nav.primaryNav}
+          >
+            {PUBLIC_NAV_ITEMS.map((item) => {
+              const active = isNavItemActive(pathname, item.href);
               return (
                 <Link
-                  key={item.href}
+                  key={item.key}
                   href={item.href}
                   className={cn(
-                    "relative px-3 py-2 text-sm font-medium transition-colors",
+                    "relative px-3 py-2.5 text-sm font-medium transition-colors",
                     active
                       ? "text-[#F8FAFC]"
                       : "text-[#64748B] hover:text-[#CBD5E1]"
                   )}
                 >
-                  {navLabels[item.key]}
+                  {t.nav[item.key]}
                   {active ? (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-gradient-to-r from-[#EF4444] to-[#F97316]" />
+                    <span className="absolute bottom-0.5 left-3 right-3 h-0.5 rounded-full bg-gradient-to-r from-[#EF4444] to-[#F97316] shadow-[0_0_12px_rgba(239,68,68,0.45)]" />
                   ) : null}
                 </Link>
               );
@@ -96,9 +81,9 @@ export function TopNav() {
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <Button
               nativeButton={false}
-              render={<Link href={brand.nav.submit.href} />}
+              render={<Link href={submitRoute()} />}
               size="sm"
-              className="hidden h-8 border border-[#EF4444]/50 bg-[#EF4444]/20 text-[#F8FAFC] shadow-[0_0_20px_-6px_rgba(239,68,68,0.5)] hover:bg-[#EF4444]/30 sm:inline-flex"
+              className="hidden h-9 min-w-[4.5rem] border border-[#EF4444]/50 bg-[#EF4444]/20 px-3 text-[#F8FAFC] shadow-[0_0_20px_-6px_rgba(239,68,68,0.5)] hover:bg-[#EF4444]/30 sm:inline-flex"
             >
               {t.nav.submit}
             </Button>
@@ -107,10 +92,10 @@ export function TopNav() {
             {!loading && !user ? (
               <Button
                 nativeButton={false}
-                render={<Link href={brand.nav.login.href} />}
+                render={<Link href={ROUTES.login} />}
                 size="sm"
                 variant="outline"
-                className="hidden h-8 border-white/[0.12] bg-[#0B1118]/80 text-[#CBD5E1] hover:border-[#3B82F6]/40 hover:text-[#F8FAFC] sm:inline-flex"
+                className="hidden h-9 border-white/[0.12] bg-[#0B1118]/80 text-[#CBD5E1] hover:border-[#3B82F6]/40 hover:text-[#F8FAFC] sm:inline-flex"
               >
                 {t.auth.login}
               </Button>

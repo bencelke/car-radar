@@ -53,7 +53,7 @@ export type UploadCommunityPostImageParams = {
   onProgress?: (percent: number) => void;
 };
 
-async function uploadBlobToPath(
+export async function uploadBlobToPath(
   storagePath: string,
   file: Blob | File,
   ext: string,

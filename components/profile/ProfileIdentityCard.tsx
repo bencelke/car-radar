@@ -11,12 +11,18 @@ import {
   statusBadgeClass,
 } from "@/components/profile/profile-ui";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { displayNameFromUserLike } from "@/lib/auth/user-display";
 import { normalizeUserInstagramInput } from "@/lib/auth/instagram-profile";
 import { updateGarage } from "@/lib/repositories/garages";
-import { updateUserInstagramProfile } from "@/lib/repositories/users";
+import {
+  updateUserInstagramProfile,
+  updateUserProfileDisplayName,
+} from "@/lib/repositories/users";
 import type { ClubMember, GarageProfile, UserProfile } from "@/lib/types";
 import { formatInstagramHandle } from "@/lib/utils/instagram";
 import { cn } from "@/lib/utils";
+import { updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 type ProfileIdentityCardProps = {
   userId: string;
@@ -45,9 +51,7 @@ export function ProfileIdentityCard({
   const editing = editingProp ?? internalEditing;
   const setEditing = onEditingChange ?? setInternalEditing;
 
-  const [displayName, setDisplayName] = useState(
-    garage?.displayName ?? profile?.displayName ?? ""
-  );
+  const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
   const [instagramInput, setInstagramInput] = useState(
     profile?.instagramHandle ?? garage?.instagramHandle ?? ""
   );
@@ -64,7 +68,7 @@ export function ProfileIdentityCard({
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setDisplayName(garage?.displayName ?? profile?.displayName ?? "");
+    setDisplayName(profile?.displayName ?? "");
     setInstagramInput(profile?.instagramHandle ?? garage?.instagramHandle ?? "");
     setCity(garage?.city ?? claimedMember?.city ?? "");
     setArea(garage?.area ?? "");
@@ -75,10 +79,26 @@ export function ProfileIdentityCard({
   const clubName = garage?.clubName ?? claimedMember?.clubName;
   const instagramHandle = profile?.instagramHandle ?? garage?.instagramHandle;
   const verification = profile?.instagramVerificationStatus;
+  const savedDisplayName = displayNameFromUserLike(profile, null);
 
   async function handleSave() {
     setError(null);
     setSaved(false);
+
+    const trimmedName = displayName.trim();
+    if (!trimmedName) {
+      setError(t.garage.validation.displayNameRequired);
+      return;
+    }
+    if (trimmedName.length < 2) {
+      setError(t.garage.validation.displayNameTooShort);
+      return;
+    }
+    if (trimmedName.length > 50) {
+      setError(t.garage.validation.displayNameTooLong);
+      return;
+    }
+
     const normalized = normalizeUserInstagramInput(instagramInput);
     if (instagramInput.trim() && !normalized) {
       setError(t.auth.instagramInvalidHandle);
@@ -87,6 +107,16 @@ export function ProfileIdentityCard({
 
     setSaving(true);
     try {
+      await updateUserProfileDisplayName(userId, trimmedName);
+
+      try {
+        if (auth?.currentUser) {
+          await updateProfile(auth.currentUser, { displayName: trimmedName });
+        }
+      } catch {
+        /* Firestore name is primary; Auth sync is best-effort */
+      }
+
       if (normalized) {
         await updateUserInstagramProfile(
           userId,
@@ -96,7 +126,6 @@ export function ProfileIdentityCard({
       }
       if (garage) {
         await updateGarage(userId, {
-          displayName: displayName.trim() || garage.displayName,
           city: city.trim() || undefined,
           area: area.trim() || undefined,
           country: country.trim() || undefined,
@@ -141,20 +170,18 @@ export function ProfileIdentityCard({
         <div className="mt-4 space-y-3">
           <div>
             <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
-              {t.garage.displayName}
+              {t.profile.displayName}
             </label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className={inputClass}
-              disabled={!garage}
+              autoComplete="name"
             />
-            {!garage ? (
-              <p className="mt-1 text-[10px] text-[#64748B]">
-                {t.profile.createGarageForIdentity}
-              </p>
-            ) : null}
+            <p className="mt-1 text-[10px] text-[#64748B]">
+              {t.profile.displayNameHint}
+            </p>
           </div>
           <div>
             <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
@@ -229,7 +256,7 @@ export function ProfileIdentityCard({
           ) : null}
           {error ? <p className="text-xs text-red-300">{error}</p> : null}
           {saved ? (
-            <p className="text-xs text-emerald-400/90">{t.profile.savedSuccess}</p>
+            <p className="text-xs text-emerald-400/90">{t.profile.profileUpdated}</p>
           ) : null}
           <div className="flex flex-wrap gap-2 pt-1">
             <button
@@ -257,9 +284,9 @@ export function ProfileIdentityCard({
       ) : (
         <dl className="mt-4 space-y-3 text-sm">
           <div className="flex justify-between gap-4 border-b border-white/[0.04] pb-3">
-            <dt className="text-[#64748B]">{t.garage.displayName}</dt>
+            <dt className="text-[#64748B]">{t.profile.displayName}</dt>
             <dd className="text-right font-medium text-[#E2E8F0]">
-              {displayName || "—"}
+              {savedDisplayName || "—"}
             </dd>
           </div>
           <div className="flex justify-between gap-4 border-b border-white/[0.04] pb-3">

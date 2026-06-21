@@ -24,6 +24,7 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && (
           userDoc().data.role == 'admin'
+          || userDoc().data.role == 'founder'
           || userDoc().data.isAdmin == true
         );
     }
@@ -73,7 +74,8 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email is string
         && request.resource.data.role == 'user'
-        && request.resource.data.isAdmin == false;
+        && request.resource.data.isAdmin == false
+        && !request.resource.data.keys().hasAny(['adminRole', 'title']);
     }
 
     function userSelfUpdateAllowed() {
@@ -130,6 +132,8 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Normal users cannot set shop ownerUid or claimStatus — admin only via rules above.
+
     match /car_events/{docId} {
       allow read: if isPublicEvent() || isAdmin()
         || (
@@ -161,7 +165,7 @@ service cloud.firestore {
           signedIn()
           && isClubManager(docId)
           && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['ownerUid', 'managerUids', 'adminUids', 'status', 'id', 'slug', 'createdAt', 'createdByUid'])
+            .hasAny(['ownerUid', 'managerUids', 'adminUids', 'status', 'id', 'slug', 'createdAt', 'createdByUid', 'claimStatus'])
         );
     }
 
@@ -713,6 +717,57 @@ service cloud.firestore {
     match /communities/{docId} {
       allow read: if isApprovedListing() || isAdmin();
       allow create, update, delete: if isAdmin();
+    }
+
+    // --- Profile claim requests (ShiftIt beta) ---
+    // Users submit pending claims; only admins/founders approve and assign ownership.
+
+    function profileClaimCreateAllowed() {
+      return signedIn()
+        && request.resource.data.requestedByUid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.targetType is string
+        && request.resource.data.targetId is string
+        && !request.resource.data.keys().hasAny(['reviewedByUid', 'reviewedAt']);
+    }
+
+    function profileClaimAdminUpdateAllowed() {
+      return isAdmin()
+        && request.resource.data.requestedByUid == resource.data.requestedByUid
+        && request.resource.data.targetType == resource.data.targetType
+        && request.resource.data.targetId == resource.data.targetId;
+    }
+
+    match /profile_claims/{claimId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.requestedByUid == request.auth.uid);
+      allow create: if profileClaimCreateAllowed();
+      allow update: if profileClaimAdminUpdateAllowed();
+      allow delete: if isAdmin();
+    }
+
+    function correctionRequestCreateAllowed() {
+      return request.resource.data.status == 'pending'
+        && request.resource.data.targetType is string
+        && request.resource.data.targetId is string
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 3000
+        && (
+          !('requesterUid' in request.resource.data)
+          || request.resource.data.requesterUid == null
+          || (signedIn() && request.resource.data.requesterUid == request.auth.uid)
+        );
+    }
+
+    match /correction_requests/{requestId} {
+      allow read: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.requesterUid == request.auth.uid
+        );
+      allow create: if correctionRequestCreateAllowed();
+      allow update, delete: if isAdmin();
     }
   }
 }

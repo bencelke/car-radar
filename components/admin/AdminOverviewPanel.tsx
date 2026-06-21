@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import { GlassPanel } from "@/components/dashboard/glass-panel";
+import { AdminStatCard } from "@/components/admin/AdminStatCard";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { getAdminOverviewStats } from "@/lib/repositories/admin-data";
 import type { AdminOverviewStats } from "@/lib/repositories/admin-data";
@@ -32,12 +32,22 @@ export function AdminOverviewPanel({ pendingCount }: AdminOverviewPanelProps) {
   }, []);
 
   const cards = [
-    { label: t.admin.overviewClubs, value: stats?.clubCount },
-    { label: t.admin.overviewMembers, value: stats?.memberCount },
-    { label: t.admin.overviewEvents, value: stats?.upcomingEventCount },
+    { label: t.admin.overviewClubs, value: stats?.clubCount, accent: "blue" as const },
+    { label: t.admin.overviewMembers, value: stats?.memberCount, accent: "purple" as const },
+    {
+      label: t.admin.overviewEvents,
+      value: stats?.upcomingEventCount,
+      accent: "red" as const,
+    },
+    {
+      label: t.admin.overviewShops,
+      value: stats?.shopCount ?? "—",
+      accent: "blue" as const,
+    },
     {
       label: t.admin.overviewPending,
       value: pendingCount || stats?.pendingSubmissionCount,
+      accent: "amber" as const,
     },
   ];
 
@@ -56,16 +66,14 @@ export function AdminOverviewPanel({ pendingCount }: AdminOverviewPanelProps) {
           {t.admin.loading}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           {cards.map((card) => (
-            <GlassPanel key={card.label} className="p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#64748B]">
-                {card.label}
-              </p>
-              <p className="mt-2 font-heading text-2xl font-bold text-[#F8FAFC]">
-                {card.value ?? "—"}
-              </p>
-            </GlassPanel>
+            <AdminStatCard
+              key={card.label}
+              label={card.label}
+              value={card.value}
+              accent={card.accent}
+            />
           ))}
         </div>
       )}

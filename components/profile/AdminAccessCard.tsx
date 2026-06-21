@@ -9,13 +9,13 @@ import {
   Users,
 } from "lucide-react";
 
-import { FirebaseDiagnosticsPanel } from "@/components/admin/FirebaseDiagnosticsPanel";
 import {
   premiumPanelClass,
   sectionHeadingClass,
   sectionSubtextClass,
 } from "@/components/profile/profile-ui";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { ADMIN_ROUTES } from "@/lib/config/admin-routes";
 import { brand } from "@/lib/config/brand";
 import { cn } from "@/lib/utils";
 
@@ -23,22 +23,11 @@ export function AdminAccessCard() {
   const { t } = useLocale();
 
   const links = [
-    {       href: brand.nav.admin.href,
-      label: t.profile.manageClubs,
-      icon: Car,
-    },
+    { href: ADMIN_ROUTES.clubs, label: t.profile.manageClubs, icon: Car },
+    { href: ADMIN_ROUTES.members, label: t.profile.manageMembers, icon: Users },
+    { href: ADMIN_ROUTES.events, label: t.profile.manageEvents, icon: Calendar },
     {
-      href: brand.nav.admin.href,
-      label: t.profile.manageMembers,
-      icon: Users,
-    },
-    {
-      href: brand.nav.admin.href,
-      label: t.profile.manageEvents,
-      icon: Calendar,
-    },
-    {
-      href: brand.nav.admin.href,
+      href: ADMIN_ROUTES.submissions,
       label: t.profile.reviewSubmissions,
       icon: ClipboardList,
     },
@@ -85,17 +74,6 @@ export function AdminAccessCard() {
           );
         })}
       </ul>
-
-      {process.env.NODE_ENV === "development" ? (
-        <details className="mt-4 rounded-lg border border-white/[0.06] bg-[#151B24]/30 px-3 py-2">
-          <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
-            DEV · Firebase diagnostics
-          </summary>
-          <div className="mt-2 -mx-1">
-            <FirebaseDiagnosticsPanel />
-          </div>
-        </details>
-      ) : null}
     </section>
   );
 }

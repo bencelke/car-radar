@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { Calendar, Shield } from "lucide-react";
 
-import { ClubAdminTools } from "@/components/clubs/ClubAdminTools";
+import { AdminManageClubLink } from "@/components/admin/AdminManageLinks";
 import { ClubFollowButton } from "@/components/clubs/ClubFollowButton";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { canManageClub } from "@/lib/clubs/club-auth";
 import type { CarEvent, Club } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -37,8 +36,7 @@ export function ClubPostsRail({
   className,
 }: ClubPostsRailProps) {
   const { t } = useLocale();
-  const { user, isAdmin } = useAuth();
-  const canManage = Boolean(user && canManageClub(club, user.uid, isAdmin));
+  const { isAdmin } = useAuth();
 
   const upcoming = events
     .filter((e) => e.startTime && new Date(e.startTime) >= new Date())
@@ -144,13 +142,8 @@ export function ClubPostsRail({
         </ul>
       </div>
 
-      {canManage ? (
-        <ClubAdminTools
-          club={club}
-          coverSrc={coverSrc}
-          onClubUpdate={onClubUpdate}
-          onCoverSaved={onCoverSaved}
-        />
+      {isAdmin ? (
+        <AdminManageClubLink clubId={club.id} className="w-full" />
       ) : null}
     </aside>
   );

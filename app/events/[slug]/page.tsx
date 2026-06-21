@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EventDetailView } from "@/components/detail/EventDetailView";
+import { EventListBackLink } from "@/components/events/EventListBackLink";
 import { PageShell } from "@/components/layout/PageShell";
 import { brand } from "@/lib/config/brand";
 import { getApprovedClubs } from "@/lib/repositories/clubs";
@@ -50,13 +50,8 @@ export default async function EventDetailPage({ params }: PageProps) {
     : null;
 
   return (
-    <PageShell>
-      <Link
-        href="/events"
-        className="mb-4 inline-block text-xs text-[#3B82F6] hover:underline"
-      >
-        ← Events
-      </Link>
+    <PageShell maxWidth="detail">
+      <EventListBackLink />
       <EventDetailView
         event={event}
         relatedShops={relatedShops}

@@ -5,10 +5,13 @@ import { Camera, ExternalLink, Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { ProfilePhotoSheet } from "@/components/profile/ProfilePhotoSheet";
+import { UserAvatar } from "@/components/profile/UserAvatar";
+import { UserTitleBadge } from "@/components/profile/UserTitleBadge";
 import {
   premiumPanelClass,
   statusBadgeClass,
 } from "@/components/profile/profile-ui";
+import { displayNameFromUserLike } from "@/lib/auth/user-display";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { ClubMember, GarageProfile, UserProfile } from "@/lib/types";
 import type { User } from "firebase/auth";
@@ -47,13 +50,7 @@ export function ProfileHero({
   const { t, locale } = useLocale();
   const [photoOpen, setPhotoOpen] = useState(false);
 
-  const avatarUrl =
-    profile?.avatarUrl ?? profile?.imageUrl ?? user.photoURL ?? undefined;
-  const displayName =
-    profile?.displayName ??
-    garage?.displayName ??
-    user.displayName ??
-    t.profile.account;
+  const displayName = displayNameFromUserLike(profile, user);
   const instagram =
     profile?.instagramHandle ?? garage?.instagramHandle ?? garage?.instagram;
   const clubName = garage?.clubName ?? claimedMember?.clubName;
@@ -61,13 +58,6 @@ export function ProfileHero({
   const displayEmail = user.email?.includes("@privaterelay.appleid.com")
     ? t.auth.applePrivateEmailNote
     : user.email;
-
-  const initials = displayName
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   return (
     <>
@@ -90,20 +80,13 @@ export function ProfileHero({
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 sm:gap-5">
             <div className="relative shrink-0">
-              <div className="size-[4.5rem] overflow-hidden rounded-2xl border border-white/[0.1] bg-[#151B24] shadow-[0_0_24px_-8px_rgba(59,130,246,0.45)] sm:size-28">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <div className="flex size-full items-center justify-center bg-gradient-to-br from-[#3B82F6]/30 to-[#A855F7]/25 font-heading text-xl font-bold text-[#F8FAFC]">
-                    {initials || "?"}
-                  </div>
-                )}
-              </div>
+              <UserAvatar
+                profile={profile}
+                authUser={user}
+                size="lg"
+                rounded="2xl"
+                className="shadow-[0_0_24px_-8px_rgba(59,130,246,0.45)]"
+              />
               <button
                 type="button"
                 aria-label={t.profile.changePhoto}
@@ -119,6 +102,7 @@ export function ProfileHero({
                 <h1 className="font-heading text-xl font-bold tracking-tight text-[#F8FAFC] sm:text-2xl">
                   {displayName}
                 </h1>
+                <UserTitleBadge profile={profile} />
                 <span
                   className={cn(
                     statusBadgeClass,
@@ -177,8 +161,8 @@ export function ProfileHero({
       <ProfilePhotoSheet
         open={photoOpen}
         onOpenChange={setPhotoOpen}
-        ownerId={user.uid}
-        currentImageUrl={avatarUrl}
+        user={user}
+        profile={profile}
         onUploaded={onPhotoUpdated}
       />
     </>

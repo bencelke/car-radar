@@ -1,7 +1,7 @@
-import { DashboardView } from "@/components/dashboard/DashboardView";
+import { HomeSceneView } from "@/components/home/HomeSceneView";
 import { loadDashboardData } from "@/lib/data/dashboard";
 
 export default async function HomePage() {
   const data = await loadDashboardData();
-  return <DashboardView {...data} />;
+  return <HomeSceneView {...data} />;
 }

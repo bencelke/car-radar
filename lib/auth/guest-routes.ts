@@ -1,3 +1,5 @@
+import { DEFAULT_AFTER_LOGIN_ROUTE } from "@/lib/config/routes";
+
 /**
  * Public routes guests may browse without signing in.
  * Does not create Firebase anonymous accounts.
@@ -83,5 +85,5 @@ export function resolveGuestDestination(next?: string | null): string {
   if (sanitized && isPublicGuestRoute(sanitized)) {
     return sanitized;
   }
-  return "/";
+  return DEFAULT_AFTER_LOGIN_ROUTE;
 }

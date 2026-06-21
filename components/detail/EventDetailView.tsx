@@ -39,6 +39,86 @@ function formatEventTime(iso: string): string {
   });
 }
 
+function EventSidebar({
+  event,
+  goingCount,
+  interestedCount,
+  onCountsChange,
+  socialLinks,
+  relatedShops,
+  relatedClubs,
+}: {
+  event: CarEvent;
+  goingCount: number;
+  interestedCount: number;
+  onCountsChange: () => void;
+  socialLinks: SocialLinkItem[];
+  relatedShops: CarShop[];
+  relatedClubs: Club[];
+}) {
+  const { t } = useLocale();
+
+  return (
+    <aside className="space-y-4 lg:sticky lg:top-[calc(3.75rem+1rem)] lg:self-start">
+      <div className="rounded-2xl border border-[#EF4444]/25 bg-gradient-to-br from-[#EF4444]/10 via-[#0B1118] to-[#0B1118]/90 p-4 shadow-[0_0_32px_-12px_rgba(239,68,68,0.35)] backdrop-blur-xl">
+        <EventRsvpControl event={event} onCountsChange={onCountsChange} />
+        <EventAttendanceSummary
+          event={event}
+          goingCount={goingCount}
+          interestedCount={interestedCount}
+        />
+      </div>
+
+      {event.lat != null && event.lng != null ? (
+        <DirectionsButton
+          lat={event.lat}
+          lng={event.lng}
+          label={t.detail.directions}
+        />
+      ) : null}
+
+      {event.organizerName ? (
+        <div className="rounded-xl border border-white/[0.08] bg-[#0B1118]/60 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+            Organizer
+          </p>
+          <p className="mt-1 text-sm font-medium text-[#F8FAFC]">
+            {event.organizerName}
+          </p>
+        </div>
+      ) : null}
+
+      {socialLinks.length > 0 ? (
+        <SocialLinks title={t.detail.socialLinks} links={socialLinks} />
+      ) : null}
+
+      {relatedShops.length > 0 ? (
+        <RelatedSection title={t.detail.nearbyShops}>
+          <RelatedEntityList
+            items={relatedShops.slice(0, 6).map((shop) => ({
+              href: shopDetailPath(shop),
+              title: shop.name,
+              subtitle: `${shop.city}`,
+            }))}
+          />
+        </RelatedSection>
+      ) : null}
+
+      {relatedClubs.length > 0 ? (
+        <RelatedSection title={t.detail.relatedClubs}>
+          <RelatedEntityList
+            items={relatedClubs.slice(0, 6).map((club) => ({
+              href: clubDetailPath(club),
+              title: club.name,
+              subtitle: `${club.type} · ${club.city}`,
+            }))}
+          />
+        </RelatedSection>
+      ) : null}
+    </aside>
+  );
+}
+
 export function EventDetailView({
   event,
   relatedShops,
@@ -62,6 +142,7 @@ export function EventDetailView({
       setUserCheckedInAt(checkIn?.checkedInAt ?? null);
     });
   }, [user, event.id]);
+
   const location = [event.address, event.city, event.country]
     .filter(Boolean)
     .join(" · ");
@@ -82,8 +163,31 @@ export function EventDetailView({
     });
   }
 
+  const refreshCounts = () => {
+    void import("@/lib/repositories/events").then(({ getEventById }) =>
+      getEventById(event.id).then((fresh) => {
+        if (fresh) {
+          setGoingCount(fresh.goingCount ?? 0);
+          setInterestedCount(fresh.interestedCount ?? 0);
+        }
+      })
+    );
+  };
+
+  const sidebar = (
+    <EventSidebar
+      event={event}
+      goingCount={goingCount}
+      interestedCount={interestedCount}
+      onCountsChange={refreshCounts}
+      socialLinks={socialLinks}
+      relatedShops={relatedShops}
+      relatedClubs={relatedClubs}
+    />
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <DetailShareBar
         entity={{ type: "event", event }}
         inviteOptions={{
@@ -91,6 +195,9 @@ export function EventDetailView({
           eventInvite: { eventId: event.id },
         }}
       />
+
+      <div className="lg:hidden">{sidebar}</div>
+
       <DetailHero
         title={event.title}
         typeBadge={event.type}
@@ -99,11 +206,6 @@ export function EventDetailView({
         location={location}
         gradientClassName="from-purple-600/40 via-[#111827] to-orange-600/30"
       >
-        <EventAttendanceSummary
-          event={event}
-          goingCount={goingCount}
-          interestedCount={interestedCount}
-        />
         <EventCheckInStatus
           event={event}
           userCheckedInAt={userCheckedInAt}
@@ -116,80 +218,39 @@ export function EventDetailView({
         ) : null}
       </DetailHero>
 
-      <EventConversationTabs
-        event={event}
-        club={hostClub}
-        details={
-          <>
-            <InfoGrid
-              items={[
-                { label: "Date", value: formatEventTime(event.startTime) },
-                {
-                  label: "End",
-                  value: event.endTime ? formatEventTime(event.endTime) : null,
-                },
-                { label: "Organizer", value: event.organizerName },
-                {
-                  label: t.community.meetingRoute,
-                  value: event.meetingRoute ?? null,
-                },
-              ]}
-            />
-
-            <EventRsvpControl
-              event={event}
-              onCountsChange={() => {
-                void import("@/lib/repositories/events").then(({ getEventById }) =>
-                  getEventById(event.id).then((fresh) => {
-                    if (fresh) {
-                      setGoingCount(fresh.goingCount ?? 0);
-                      setInterestedCount(fresh.interestedCount ?? 0);
-                    }
-                  })
-                );
-              }}
-            />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {event.lat != null && event.lng != null ? (
-                <DirectionsButton
-                  lat={event.lat}
-                  lng={event.lng}
-                  label={t.detail.directions}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:gap-8">
+        <div className="min-w-0">
+          <EventConversationTabs
+            event={event}
+            club={hostClub}
+            details={
+              <>
+                <InfoGrid
+                  items={[
+                    { label: "Date", value: formatEventTime(event.startTime) },
+                    {
+                      label: "End",
+                      value: event.endTime ? formatEventTime(event.endTime) : null,
+                    },
+                    { label: "Organizer", value: event.organizerName },
+                    {
+                      label: t.community.meetingRoute,
+                      value: event.meetingRoute ?? null,
+                    },
+                  ]}
                 />
-              ) : null}
-              <SocialLinks title={t.detail.socialLinks} links={socialLinks} />
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <RelatedSection title={t.detail.nearbyShops}>
-                <RelatedEntityList
-                  items={relatedShops.slice(0, 6).map((shop) => ({
-                    href: shopDetailPath(shop),
-                    title: shop.name,
-                    subtitle: `${shop.city}`,
-                  }))}
+                <CorrectionLink
+                  targetType="event"
+                  targetName={event.title}
+                  entityId={event.id}
                 />
-              </RelatedSection>
-              <RelatedSection title={t.detail.relatedClubs}>
-                <RelatedEntityList
-                  items={relatedClubs.slice(0, 6).map((club) => ({
-                    href: clubDetailPath(club),
-                    title: club.name,
-                    subtitle: `${club.type} · ${club.city}`,
-                  }))}
-                />
-              </RelatedSection>
-            </div>
+              </>
+            }
+          />
+        </div>
 
-            <CorrectionLink
-              targetType="event"
-              targetName={event.title}
-              entityId={event.id}
-            />
-          </>
-        }
-      />
+        <div className="hidden lg:block">{sidebar}</div>
+      </div>
     </div>
   );
 }

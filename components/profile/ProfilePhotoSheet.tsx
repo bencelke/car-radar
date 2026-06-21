@@ -1,22 +1,25 @@
 "use client";
 
-import { ProfileImageUploader } from "@/components/images/ProfileImageUploader";
+import type { User } from "firebase/auth";
+
+import { UserAvatarEditor } from "@/components/profile/UserAvatarEditor";
 import { ResponsiveSheet } from "@/components/mobile/ResponsiveSheet";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import type { UserProfile } from "@/lib/types";
 
 type ProfilePhotoSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  ownerId: string;
-  currentImageUrl?: string;
+  user: User;
+  profile: UserProfile | null;
   onUploaded: () => Promise<void>;
 };
 
 export function ProfilePhotoSheet({
   open,
   onOpenChange,
-  ownerId,
-  currentImageUrl,
+  user,
+  profile,
   onUploaded,
 }: ProfilePhotoSheetProps) {
   const { t } = useLocale();
@@ -28,20 +31,16 @@ export function ProfilePhotoSheet({
       side="bottom"
       title={t.profile.changePhoto}
       closeLabel={t.garage.cancel}
-      panelClassName="max-h-[90dvh] overflow-y-auto"
+      panelClassName="max-h-[90dvh] overflow-y-auto pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="[&>div]:border-0 [&>div]:bg-transparent [&>div]:p-0 [&_h3]:sr-only [&_p]:first-of-type:sr-only">
-        <ProfileImageUploader
-          ownerType="user"
-          ownerId={ownerId}
-          currentImageUrl={currentImageUrl}
-          compactPreview
-          onUploaded={async () => {
-            await onUploaded();
-            onOpenChange(false);
-          }}
-        />
-      </div>
+      <UserAvatarEditor
+        uid={user.uid}
+        profile={profile}
+        authUser={user}
+        onUpdated={async () => {
+          await onUploaded();
+        }}
+      />
     </ResponsiveSheet>
   );
 }

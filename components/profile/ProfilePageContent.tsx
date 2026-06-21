@@ -20,7 +20,7 @@ import { isFirebaseConfigured } from "@/lib/firebase/client";
 
 export function ProfilePageContent() {
   const { t } = useLocale();
-  const { user, profile, loading, signOut, refreshProfile, isAdmin } = useAuth();
+  const { user, profile, loading, signOut, reloadProfileFromFirestore, isAdmin } = useAuth();
   const garageState = useProfileGarage(user?.uid);
   const identityRef = useRef<HTMLDivElement>(null);
   const [identityEditing, setIdentityEditing] = useState(false);
@@ -64,7 +64,10 @@ export function ProfilePageContent() {
       : null;
 
   async function handleRefresh() {
-    await Promise.all([refreshProfile(), garageState.refresh()]);
+    await Promise.all([
+      reloadProfileFromFirestore(),
+      garageState.refresh(),
+    ]);
   }
 
   function scrollToIdentityEdit() {
@@ -97,6 +100,8 @@ export function ProfilePageContent() {
             modCount={garageState.modCount}
             updateCount={garageState.updateCount}
             loading={garageState.loading}
+            profile={profile}
+            authDisplayName={user.displayName}
           />
 
           <div ref={identityRef}>

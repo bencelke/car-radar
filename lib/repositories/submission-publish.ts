@@ -148,6 +148,11 @@ export function mapSubmissionToPublicEntity(
       sourceSubmissionId,
       createdAt: now,
       updatedAt: now,
+      claimStatus: "unclaimed",
+      ownerUid: null,
+      managerUids: [],
+      source: "user_submission",
+      visibility: "public",
     };
     return {
       collection: COLLECTIONS.carShops,
@@ -213,6 +218,11 @@ export function mapSubmissionToPublicEntity(
       sourceSubmissionId,
       createdAt: now,
       updatedAt: now,
+      claimStatus: "unclaimed",
+      ownerUid: null,
+      managerUids: [],
+      source: "user_submission",
+      visibility: "public",
     };
     return {
       collection: COLLECTIONS.clubs,
@@ -246,6 +256,10 @@ export function mapSubmissionToPublicEntity(
       lng: submission.lng,
       verifiedByClub: false,
       featured: false,
+      claimStatus: "unclaimed",
+      claimedByUid: null,
+      source: "user_submission",
+      visibility: "public",
       sourceSubmissionId,
       createdAt: now,
       updatedAt: now,

@@ -9,16 +9,20 @@ import {
   ChevronDown,
   Heart,
   LogOut,
-  Settings,
   Shield,
   User,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { LanguageDropdown } from "@/components/language/LanguageDropdown";
+import { UserAvatar } from "@/components/profile/UserAvatar";
+import { UserTitleBadge } from "@/components/profile/UserTitleBadge";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { brand } from "@/lib/config/brand";
+import { getAdminNavLabelKey, isAdminUser } from "@/lib/auth/permissions";
+import { displayNameFromUserLike } from "@/lib/auth/user-display";
+import { ROUTES } from "@/lib/config/routes";
+import { isNavItemActive } from "@/lib/navigation/is-nav-active";
 import { cn } from "@/lib/utils";
 
 type ProfileMenuProps = {
@@ -28,13 +32,11 @@ type ProfileMenuProps = {
 export function ProfileMenu({ className }: ProfileMenuProps) {
   const pathname = usePathname();
   const { t } = useLocale();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const avatarUrl = profile?.avatarUrl ?? profile?.imageUrl ?? user?.photoURL;
-  const displayName =
-    profile?.displayName ?? user?.displayName ?? user?.email ?? t.profile.account;
+  const displayName = displayNameFromUserLike(profile, user);
 
   useEffect(() => {
     if (!open) return;
@@ -57,36 +59,18 @@ export function ProfileMenu({ className }: ProfileMenuProps) {
     };
   }, [open]);
 
+  const adminNavKey = getAdminNavLabelKey(profile);
+
   if (!user) return null;
 
   const close = () => setOpen(false);
 
   const menuLinks = [
-    {
-      href: "/garage",
-      label: t.profile.myGarage,
-      icon: Car,
-    },
-    {
-      href: "/feed",
-      label: t.social.activityFeed,
-      icon: Activity,
-    },
-    {
-      href: "/following",
-      label: t.social.followingBuilds,
-      icon: Heart,
-    },
-    {
-      href: "/notifications",
-      label: t.notifications.notifications,
-      icon: Bell,
-    },
-    {
-      href: brand.nav.profile.href,
-      label: t.profile.profileAndSettings,
-      icon: Settings,
-    },
+    { href: ROUTES.profile, label: t.profile.profile, icon: User },
+    { href: ROUTES.garage, label: t.profile.myGarage, icon: Car },
+    { href: ROUTES.events, label: t.nav.myEvents, icon: Activity },
+    { href: ROUTES.following, label: t.social.followingBuilds, icon: Heart },
+    { href: ROUTES.notifications, label: t.notifications.notifications, icon: Bell },
   ];
 
   return (
@@ -102,18 +86,7 @@ export function ProfileMenu({ className }: ProfileMenuProps) {
           open && "border-[#3B82F6]/40"
         )}
       >
-        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/[0.08] bg-[#151B24]">
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarUrl}
-              alt=""
-              className="size-full object-cover"
-            />
-          ) : (
-            <User className="size-4" />
-          )}
-        </span>
+        <UserAvatar profile={profile} authUser={user} size="sm" rounded="md" />
         <ChevronDown
           className={cn(
             "hidden size-3.5 text-[#64748B] transition sm:block",
@@ -128,20 +101,22 @@ export function ProfileMenu({ className }: ProfileMenuProps) {
           className="absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-white/[0.08] bg-[#0B1118]/95 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl"
         >
           <div className="border-b border-white/[0.06] px-4 py-3">
-            <p className="truncate text-sm font-medium text-[#F8FAFC]">
-              {displayName}
-            </p>
-            <p className="truncate text-xs text-[#64748B]">{user.email}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-sm font-medium text-[#F8FAFC]">
+                {displayName}
+              </p>
+              <UserTitleBadge profile={profile} />
+            </div>
+            <p className="mt-1 truncate text-xs text-[#64748B]">{user.email}</p>
           </div>
 
           <nav className="flex flex-col gap-0.5 p-2">
             {menuLinks.map((item) => {
               const Icon = item.icon;
-              const active =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = isNavItemActive(pathname, item.href);
               return (
                 <Link
-                  key={item.href}
+                  key={`${item.href}-${item.label}`}
                   href={item.href}
                   role="menuitem"
                   onClick={close}
@@ -158,15 +133,15 @@ export function ProfileMenu({ className }: ProfileMenuProps) {
               );
             })}
 
-            {isAdmin ? (
+            {isAdminUser(profile) ? (
               <Link
-                href={brand.nav.admin.href}
+                href={ROUTES.admin}
                 role="menuitem"
                 onClick={close}
                 className="flex min-h-11 items-center gap-2.5 rounded-lg px-3 text-sm text-[#FCA5A5] transition hover:bg-[#EF4444]/10"
               >
                 <Shield className="size-4 shrink-0" />
-                {t.profile.adminAccess}
+                {t.profile[adminNavKey]}
               </Link>
             ) : null}
           </nav>
@@ -176,7 +151,7 @@ export function ProfileMenu({ className }: ProfileMenuProps) {
             <button
               type="button"
               role="menuitem"
-              className="mt-1 flex w-full min-h-11 items-center gap-2.5 rounded-lg px-3 text-sm text-[#94A3B8] transition hover:bg-red-500/10 hover:text-red-200"
+              className="mt-1 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-sm text-[#94A3B8] transition hover:bg-red-500/10 hover:text-red-200"
               onClick={() => {
                 close();
                 void signOut();

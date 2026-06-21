@@ -131,12 +131,23 @@ function SubmitFormInner({ compact = false, showHeader = true }: SubmitFormProps
   useEffect(() => {
     const type = searchParams.get("type");
     const club = searchParams.get("club");
+    const targetType = searchParams.get("targetType");
+    const targetName = searchParams.get("targetName");
+    const entityId = searchParams.get("entityId");
     if (club) setForm((f) => ({ ...f, clubName: club }));
     if (type === "member") setActiveTab("member");
     else if (type === "event") setActiveTab("event");
     else if (type === "club") setActiveTab("club");
     else if (type === "correction") setActiveTab("correction");
     else if (type === "shop") setActiveTab("shop");
+    if (type === "correction" && targetType) {
+      setForm((f) => ({
+        ...f,
+        targetType: targetType as CorrectionTargetType,
+        targetName: targetName ?? f.targetName,
+        city: f.city || "Germany",
+      }));
+    }
   }, [searchParams]);
 
   const tabs: { key: TabKey; label: string }[] = [

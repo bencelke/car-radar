@@ -39,7 +39,7 @@ export function MapFilterBar({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden">
         {TYPE_FILTERS.map((filter) => {
           const label = t.map[filter.labelKey];
           const count = counts[filter.id];
@@ -50,7 +50,8 @@ export function MapFilterBar({
               type="button"
               onClick={() => onChange(filter.id)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                "shrink-0 rounded-full border px-3 py-2 text-xs font-medium transition-colors md:py-1.5",
+                "min-h-11 md:min-h-0",
                 selected
                   ? "border-blue-500/50 bg-blue-500/15 text-blue-100 shadow-[0_0_16px_rgba(59,130,246,0.25)]"
                   : "border-white/10 bg-[#0B1118]/80 text-white/65 hover:border-white/20 hover:text-white"

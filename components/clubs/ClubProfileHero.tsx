@@ -1,12 +1,14 @@
 "use client";
 
-import { BadgeCheck, MapPin, Pencil, Share2 } from "lucide-react";
+import { BadgeCheck, MapPin, Share2 } from "lucide-react";
 import Link from "next/link";
 
+import { ClaimProfileButton } from "@/components/claims/ClaimProfileButton";
+import { ClaimStatusBadge } from "@/components/claims/ClaimStatusBadge";
+import { CorrectionRequestLink } from "@/components/claims/CorrectionRequestLink";
 import { ClubProfileImage } from "@/components/clubs/ClubProfileImage";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { Club } from "@/lib/types";
-import { correctionSubmitPath } from "@/lib/utils/entity-paths";
 import { cn } from "@/lib/utils";
 
 const btnClass =
@@ -23,7 +25,6 @@ export function ClubProfileHero({ club, memberCount, coverSrc }: ClubProfileHero
   const { t } = useLocale();
   const location = [club.city, club.area, club.country].filter(Boolean).join(" · ");
   const count = club.memberCount ?? memberCount;
-  const correctionHref = correctionSubmitPath("club", club.name, club.id);
   const mapHref =
     club.lat != null && club.lng != null
       ? `/map?lat=${club.lat}&lng=${club.lng}&zoom=12`
@@ -56,6 +57,7 @@ export function ClubProfileHero({ club, memberCount, coverSrc }: ClubProfileHero
                 Featured
               </span>
             ) : null}
+            <ClaimStatusBadge record={club} />
             <Link
               href="/clubs"
               className="ml-auto text-[10px] font-medium text-[#93C5FD] hover:underline sm:hidden"
@@ -117,6 +119,11 @@ export function ClubProfileHero({ club, memberCount, coverSrc }: ClubProfileHero
             >
               {t.clubs.submitMember}
             </Link>
+            <ClaimProfileButton
+              targetType="club"
+              targetId={club.id}
+              record={club}
+            />
             <Link
               href={mapHref}
               className={cn(
@@ -141,16 +148,17 @@ export function ClubProfileHero({ club, memberCount, coverSrc }: ClubProfileHero
                 {t.clubs.openInstagram}
               </a>
             ) : null}
-            <Link
-              href={correctionHref}
-              className={cn(
-                btnClass,
-                "border-white/10 bg-white/5 text-[#CBD5E1] hover:text-[#F8FAFC]"
-              )}
-            >
-              <Pencil className="size-3.5" />
-              {t.members.submitCorrection}
-            </Link>
+            <CorrectionRequestLink
+              targetType="club"
+              targetId={club.id}
+              targetName={club.name}
+            />
+            <CorrectionRequestLink
+              targetType="club"
+              targetId={club.id}
+              targetName={club.name}
+              requestType="removal"
+            />
           </div>
         </div>
       </div>

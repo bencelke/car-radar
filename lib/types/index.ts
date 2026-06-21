@@ -55,7 +55,18 @@ export type {
   Community,
   CommunityZone,
   CorrectionTargetType,
+  CorrectionRequest,
+  CorrectionRequestStatus,
+  CorrectionRequestTargetType,
+  CorrectionRequestType,
   CreateSubmissionInput,
+  ListingClaimStatus,
+  ListingSource,
+  ListingVisibility,
+  ProfileClaim,
+  ProfileClaimProofType,
+  ProfileClaimStatus,
+  ProfileClaimTargetType,
   ListingStatus,
   PlaceCategory,
   SponsorLevel,
@@ -65,6 +76,7 @@ export type {
   ProfileImageFields,
   UserProfile,
   UserRole,
+  UserAdminRole,
 } from "./domain";
 
 export { DEFAULT_NOTIFICATION_PREFERENCES } from "./domain";

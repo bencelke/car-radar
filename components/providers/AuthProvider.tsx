@@ -29,7 +29,7 @@ import {
 import { consumeAuthNext } from "@/lib/auth/social-auth";
 import { sanitizeNextPath } from "@/lib/auth/sanitize-next-path";
 import { auth, isFirebaseConfigured } from "@/lib/firebase/client";
-import { isProfileAdmin, syncUserProfile } from "@/lib/repositories/users";
+import { isProfileAdmin, getUserProfile, syncUserProfile } from "@/lib/repositories/users";
 import type { UserProfile } from "@/lib/types";
 
 type AuthContextValue = {
@@ -53,6 +53,7 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
   signOutUser: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  reloadProfileFromFirestore: () => Promise<void>;
   clearPostAuthRedirect: () => void;
   clearAuthError: () => void;
 };
@@ -260,6 +261,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await syncProfileForUser(user, true);
   }, [user, syncProfileForUser]);
 
+  const reloadProfileFromFirestore = useCallback(async () => {
+    if (!user) return;
+    const { profile: next, error } = await getUserProfile(user.uid);
+    if (next) {
+      setProfile(next);
+    }
+    setProfileError(error);
+  }, [user]);
+
   const clearPostAuthRedirect = useCallback(() => {
     setPostAuthRedirect(null);
   }, []);
@@ -293,6 +303,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut: signOutUser,
       signOutUser,
       refreshProfile,
+      reloadProfileFromFirestore,
       clearPostAuthRedirect,
       clearAuthError,
     }),
@@ -314,6 +325,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithFacebook,
       signOutUser,
       refreshProfile,
+      reloadProfileFromFirestore,
       clearPostAuthRedirect,
       clearAuthError,
     ]

@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import { getAvatarUrlFromProfile } from "@/lib/auth/user-avatar";
 import { createComment } from "@/lib/repositories/post-comments";
 import type { CommunityPost } from "@/lib/types";
 
@@ -15,7 +16,7 @@ type CommentComposerProps = {
 
 export function CommentComposer({ post, onCreated }: CommentComposerProps) {
   const { t } = useLocale();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -40,7 +41,7 @@ export function CommentComposer({ post, onCreated }: CommentComposerProps) {
         {
           uid: user!.uid,
           displayName: user!.displayName ?? user!.email ?? "Driver",
-          avatarUrl: user!.photoURL ?? undefined,
+          avatarUrl: getAvatarUrlFromProfile(profile, user!) ?? undefined,
         }
       );
       setBody("");

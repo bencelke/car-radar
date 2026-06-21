@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { RelatedEntityList } from "@/components/detail/RelatedEntityList";
 import { RelatedSection } from "@/components/detail/RelatedSection";
-import { MemberAdminTools } from "@/components/members/MemberAdminTools";
+import { AdminManageMemberLink } from "@/components/admin/AdminManageLinks";
 import { MemberClubPanel } from "@/components/members/MemberClubPanel";
 import { MemberGarageSnapshot } from "@/components/members/MemberGarageSnapshot";
 import { MemberIdentityCard } from "@/components/members/MemberIdentityCard";
@@ -70,6 +70,7 @@ export function MemberDetailView({
           {club ? <MemberClubPanel member={member} club={club} /> : null}
           <MemberSocialPanel member={member} />
           <MemberLocationPanel member={member} />
+          <AdminManageMemberLink memberId={member.id} />
         </aside>
 
         <div className="order-2 flex flex-col gap-3 lg:order-1 lg:col-span-2">
@@ -104,8 +105,6 @@ export function MemberDetailView({
           ) : null}
         </div>
       </div>
-
-      <MemberAdminTools member={member} onMemberUpdate={setMember} />
     </div>
   );
 }
