@@ -1,0 +1,13 @@
+<!-- TODO: Replace with final branded ShiftIt app icon (PNG 192 + 512 + maskable). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ShiftIt">
+  <defs>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3b1f"/>
+      <stop offset="55%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="#050505"/>
+  <rect x="24" y="24" width="464" height="464" rx="92" fill="none" stroke="url(#glow)" stroke-width="8" opacity="0.85"/>
+  <path fill="url(#glow)" d="M148 148h216c44 0 80 36 80 80s-36 80-80 80H212v96H148V148zm64 64v96h84c17 0 32-15 32-32s-15-32-32-32h-84z"/>
+</svg>

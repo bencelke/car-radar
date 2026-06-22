@@ -27,7 +27,7 @@ export function PageShell({
   return (
     <div
       className={cn(
-        "mx-auto w-full flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8",
+        "mx-auto w-full min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8",
         maxWidthClasses[maxWidth],
         className
       )}

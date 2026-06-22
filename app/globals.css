@@ -56,6 +56,7 @@
   --background: #05070a;
   --foreground: #f8fafc;
   --mobile-header-height: 3.5rem;
+  --mobile-bottom-nav-height: 4rem;
   --card: #0b1118;
   --card-foreground: #f8fafc;
   --popover: #0b1118;
@@ -164,15 +165,42 @@
 }
 
 .mobile-map-viewport {
-  height: calc(100dvh - var(--mobile-header-height));
-  min-height: calc(100vh - var(--mobile-header-height));
-  min-height: calc(100dvh - var(--mobile-header-height));
+  height: calc(
+    100dvh - var(--mobile-header-height) - var(--mobile-bottom-nav-height) -
+      env(safe-area-inset-bottom)
+  );
+  min-height: calc(
+    100vh - var(--mobile-header-height) - var(--mobile-bottom-nav-height) -
+      env(safe-area-inset-bottom)
+  );
+  min-height: calc(
+    100dvh - var(--mobile-header-height) - var(--mobile-bottom-nav-height) -
+      env(safe-area-inset-bottom)
+  );
 }
 
 .mobile-map-viewport--home {
-  height: min(62dvh, calc(100dvh - var(--mobile-header-height) - 1rem));
-  min-height: min(360px, calc(100vh - var(--mobile-header-height) - 1rem));
-  min-height: min(360px, calc(100dvh - var(--mobile-header-height) - 1rem));
+  height: min(
+    62dvh,
+    calc(
+      100dvh - var(--mobile-header-height) - var(--mobile-bottom-nav-height) -
+        env(safe-area-inset-bottom) - 1rem
+    )
+  );
+  min-height: min(
+    360px,
+    calc(
+      100vh - var(--mobile-header-height) - var(--mobile-bottom-nav-height) -
+        env(safe-area-inset-bottom) - 1rem
+    )
+  );
+  min-height: min(
+    360px,
+    calc(
+      100dvh - var(--mobile-header-height) - var(--mobile-bottom-nav-height) -
+        env(safe-area-inset-bottom) - 1rem
+    )
+  );
 }
 
 @media (min-width: 768px) {
@@ -181,6 +209,28 @@
     height: auto;
     min-height: 0;
   }
+}
+
+.mobile-shell-main {
+  min-width: 0;
+}
+
+.tap-target {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 .safe-area-bottom {
@@ -252,7 +302,12 @@
 
   .carradar-map-controls--dashboard {
     top: auto !important;
-    bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+    bottom: max(
+      5.5rem,
+      calc(
+        env(safe-area-inset-bottom) + var(--mobile-bottom-nav-height) + 0.75rem
+      )
+    );
     transform: none !important;
   }
 }

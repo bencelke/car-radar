@@ -1657,6 +1657,8 @@ export const de = {
     recenterMap: "Karte zentrieren",
     openFullMap: "Ganze Karte öffnen",
     language: "Sprache",
+    primaryNav: "Hauptnavigation",
+    installHint: "ShiftIt installieren für schnellen Zugriff vom Startbildschirm.",
   },
   notifications: {
     notifications: "Benachrichtigungen",

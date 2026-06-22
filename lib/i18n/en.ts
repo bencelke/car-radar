@@ -1622,6 +1622,8 @@ export const en = {
     recenterMap: "Recenter map",
     openFullMap: "Open full map",
     language: "Language",
+    primaryNav: "Primary navigation",
+    installHint: "Install ShiftIt for quick access from your home screen.",
   },
   notifications: {
     notifications: "Notifications",

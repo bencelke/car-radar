@@ -1,0 +1,6 @@
+<!-- TODO: Replace with final maskable icon asset (safe zone padding for Android/iOS). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ShiftIt">
+  <rect width="512" height="512" fill="#050505"/>
+  <circle cx="256" cy="256" r="196" fill="#ff3b1f" opacity="0.18"/>
+  <path fill="#ff3b1f" d="M168 168h176c36 0 64 28 64 64s-28 64-64 64H232v80H168V168zm56 56v80h72c13 0 24-11 24-24s-11-24-24-24h-72z"/>
+</svg>
