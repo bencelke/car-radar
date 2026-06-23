@@ -1,8 +1,8 @@
-/** Main discovery home after sign-in when no valid `next` query is present. */
-export const DEFAULT_AFTER_LOGIN_ROUTE = "/" as const;
+/** Main destination after sign-in when no valid `next` query is present. */
+export const DEFAULT_AFTER_LOGIN_ROUTE = "/discover" as const;
 
 export const ROUTES = {
-  home: "/",
+  home: "/discover",
   map: "/map",
   events: "/events",
   shops: "/shops",

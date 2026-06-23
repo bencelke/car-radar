@@ -4,7 +4,7 @@ export const PWA_CONFIG = {
   shortName: "ShiftIt",
   description:
     "Discover car clubs, meets, shops, and automotive communities near you.",
-  startUrl: "/",
+  startUrl: "/login",
   display: "standalone" as const,
   backgroundColor: "#050505",
   themeColor: "#ff3b1f",

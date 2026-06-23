@@ -8,6 +8,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { brand } from "@/lib/config/brand";
+import { ROUTES } from "@/lib/config/routes";
 import { markInviteUsed } from "@/lib/repositories/user-invites";
 import { trackShareAction } from "@/lib/repositories/share-analytics";
 import type { UserInvite } from "@/lib/types";
@@ -44,7 +45,7 @@ export function InviteLandingPage({
     return (
       <InviteShell>
         <h1 className="text-xl font-bold text-[#F8FAFC]">{t.share.inviteExpired}</h1>
-        <Link href="/" className="mt-4 text-sm text-[#3B82F6] hover:underline">
+        <Link href="/login" className="mt-4 text-sm text-[#3B82F6] hover:underline">
           {t.share.continueToShiftIt}
         </Link>
       </InviteShell>
@@ -55,7 +56,7 @@ export function InviteLandingPage({
     return (
       <InviteShell>
         <h1 className="text-xl font-bold text-[#F8FAFC]">{t.share.inviteCancelled}</h1>
-        <Link href="/" className="mt-4 text-sm text-[#3B82F6] hover:underline">
+        <Link href="/login" className="mt-4 text-sm text-[#3B82F6] hover:underline">
           {t.share.continueToShiftIt}
         </Link>
       </InviteShell>
@@ -110,7 +111,7 @@ export function InviteLandingPage({
       router.push(`/events/${invite.eventId}`);
       return;
     }
-    router.push("/");
+    router.push(ROUTES.home);
   }
 
   return (
@@ -148,7 +149,7 @@ export function InviteLandingPage({
             </Button>
           </>
         )}
-        <Link href="/" className="text-center text-xs text-[#64748B] hover:text-[#CBD5E1]">
+        <Link href="/login" className="text-center text-xs text-[#64748B] hover:text-[#CBD5E1]">
           {t.share.continueToShiftIt}
         </Link>
       </div>

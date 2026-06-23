@@ -9,6 +9,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { ADMIN_ROUTES } from "@/lib/config/admin-routes";
 import { brand } from "@/lib/config/brand";
+import { ROUTES } from "@/lib/config/routes";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -116,7 +117,7 @@ export function AdminSidebarNav({
         </div>
       ))}
       <Link
-        href="/"
+        href={ROUTES.home}
         onClick={onNavigate}
         className="mt-2 px-3 text-xs text-[#64748B] hover:text-[#CBD5E1]"
       >

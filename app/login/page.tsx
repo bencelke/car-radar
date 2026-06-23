@@ -5,7 +5,7 @@ import { LoginPageContent } from "@/components/auth/LoginPageContent";
 import { brand } from "@/lib/config/brand";
 
 export const metadata: Metadata = {
-  title: `Login · ${brand.metadata.siteName}`,
+  title: brand.metadata.siteName,
   description: brand.description,
 };
 

@@ -6,7 +6,8 @@ import { DEFAULT_AFTER_LOGIN_ROUTE } from "@/lib/config/routes";
  */
 
 const PUBLIC_EXACT = new Set([
-  "/",
+  "/discover",
+  "/login",
   "/map",
   "/clubs",
   "/events",

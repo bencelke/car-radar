@@ -942,7 +942,7 @@ export const en = {
     continue: "Continue",
     continueExploring: "Continue exploring",
     loginSubcopy:
-      "Discover clubs, member cars, meets, shops, and local automotive culture around you.",
+      "Your entry to the local car scene—sign in, or browse clubs, meets, and the map as a guest.",
     bulletClubs: "Find clubs near you",
     bulletBuilds: "Explore member builds",
     bulletSubmit: "Submit shops and meets",

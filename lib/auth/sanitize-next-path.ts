@@ -10,7 +10,7 @@ function normalizePathname(pathname: string): string {
 
 function isBlockedPostLoginPath(pathname: string): boolean {
   const path = normalizePathname(pathname);
-  return path === "/login" || path.startsWith("/login/");
+  return path === "/" || path === "/login" || path.startsWith("/login/");
 }
 
 /**

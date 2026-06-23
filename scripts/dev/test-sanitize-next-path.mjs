@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-const DEFAULT_AFTER_LOGIN_ROUTE = "/";
+const DEFAULT_AFTER_LOGIN_ROUTE = "/discover";
 
 function normalizePathname(pathname) {
   if (!pathname.startsWith("/")) return pathname;
@@ -13,7 +13,7 @@ function normalizePathname(pathname) {
 
 function isBlockedPostLoginPath(pathname) {
   const path = normalizePathname(pathname);
-  return path === "/login" || path.startsWith("/login/");
+  return path === "/" || path === "/login" || path.startsWith("/login/");
 }
 
 function sanitizeNextPath(next) {
@@ -49,10 +49,10 @@ function sanitizeNextPath(next) {
 }
 
 describe("sanitizeNextPath", () => {
-  it("defaults to home when next is missing", () => {
-    assert.equal(sanitizeNextPath(null), "/");
-    assert.equal(sanitizeNextPath(undefined), "/");
-    assert.equal(sanitizeNextPath(""), "/");
+  it("defaults to discover when next is missing", () => {
+    assert.equal(sanitizeNextPath(null), "/discover");
+    assert.equal(sanitizeNextPath(undefined), "/discover");
+    assert.equal(sanitizeNextPath(""), "/discover");
   });
 
   it("allows safe internal paths", () => {
@@ -65,13 +65,14 @@ describe("sanitizeNextPath", () => {
   });
 
   it("rejects external and protocol-relative targets", () => {
-    assert.equal(sanitizeNextPath("https://evil.com"), "/");
-    assert.equal(sanitizeNextPath("//evil.com"), "/");
+    assert.equal(sanitizeNextPath("https://evil.com"), "/discover");
+    assert.equal(sanitizeNextPath("//evil.com"), "/discover");
   });
 
-  it("rejects redirect loops back to login", () => {
-    assert.equal(sanitizeNextPath("/login"), "/");
-    assert.equal(sanitizeNextPath("/login?next=/clubs"), "/");
-    assert.equal(sanitizeNextPath("/login/"), "/");
+  it("rejects redirect loops back to login or root", () => {
+    assert.equal(sanitizeNextPath("/login"), "/discover");
+    assert.equal(sanitizeNextPath("/login?next=/clubs"), "/discover");
+    assert.equal(sanitizeNextPath("/login/"), "/discover");
+    assert.equal(sanitizeNextPath("/"), "/discover");
   });
 });

@@ -963,7 +963,7 @@ export const de = {
     continue: "Weiter",
     continueExploring: "Weiter entdecken",
     loginSubcopy:
-      "Entdecke Clubs, Mitgliederfahrzeuge, Treffen, Shops und lokale Autokultur in deiner Nähe.",
+      "Dein Einstieg in die lokale Szene—anmelden oder Clubs, Treffen und die Karte als Gast entdecken.",
     bulletClubs: "Clubs in deiner Nähe finden",
     bulletBuilds: "Mitglieder-Builds entdecken",
     bulletSubmit: "Shops und Treffen einreichen",

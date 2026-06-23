@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { GlassPanel } from "@/components/dashboard/glass-panel";
 import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/config/routes";
 
 type SectionPageProps = {
   title: string;
@@ -25,7 +26,7 @@ export function SectionPage({
           nativeButton={false}
           variant="outline"
           size="sm"
-          render={<Link href="/" />}
+          render={<Link href={ROUTES.home} />}
           className="border-white/[0.08] bg-[#0B1118] text-[#CBD5E1]"
         >
           <ArrowLeft className="size-4" data-icon="inline-start" />

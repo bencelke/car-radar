@@ -12,9 +12,9 @@ export default function LoginLayout({
     <>
       <header className="fixed top-0 z-50 flex h-14 w-full items-center justify-between border-b border-white/[0.06] bg-[#05070A]/88 px-4 backdrop-blur-xl sm:h-[3.75rem] sm:px-6">
         <Link
-          href="/"
+          href="/login"
           className="group shrink-0 transition duration-200 hover:brightness-110"
-          aria-label="Home"
+          aria-label="ShiftIt"
         >
           <ShiftItLogo
             variant="nav"

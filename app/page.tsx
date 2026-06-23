@@ -1,7 +1,6 @@
-import { HomeSceneView } from "@/components/home/HomeSceneView";
-import { loadDashboardData } from "@/lib/data/dashboard";
+import { redirect } from "next/navigation";
 
-export default async function HomePage() {
-  const data = await loadDashboardData();
-  return <HomeSceneView {...data} />;
+/** Root URL is the ShiftIt sign-in entry; discovery home lives at `/discover`. */
+export default function RootPage() {
+  redirect("/login");
 }
