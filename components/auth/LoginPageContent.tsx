@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
 import { authUi } from "@/components/auth/auth-ui";
@@ -11,23 +10,13 @@ import { getSafeNextRoute } from "@/lib/auth/sanitize-next-path";
 import { cn } from "@/lib/utils";
 
 export function LoginPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = getSafeNextRoute(searchParams.get("next"));
   const initialMode =
     searchParams.get("mode") === "signUp" ? "signUp" : "signIn";
-  const { user, loading, postAuthRedirect } = useAuth();
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    if (loading || !user || postAuthRedirect) return;
-    router.replace(nextPath);
-    router.refresh();
-  }, [loading, user, postAuthRedirect, nextPath, router]);
-
-  const handleSuccess = useCallback(() => {
-    router.replace(nextPath);
-    router.refresh();
-  }, [router, nextPath]);
+  const awaitingRedirect = Boolean(user);
 
   return (
     <div className="relative min-h-[calc(100dvh-3.5rem)] overflow-x-clip pb-[max(1rem,env(safe-area-inset-bottom))] sm:min-h-[calc(100dvh-4rem)]">
@@ -63,7 +52,7 @@ export function LoginPageContent() {
             aria-hidden
           />
 
-          {loading || user ? (
+          {loading || awaitingRedirect ? (
             <div
               className={cn(
                 authUi.card.shell,
@@ -76,13 +65,12 @@ export function LoginPageContent() {
           ) : (
             <PremiumAuthCard
               className="relative mx-auto"
-              onSuccess={handleSuccess}
               nextUrl={nextPath}
               initialMode={initialMode}
             />
           )}
 
-          {!loading && !user ? (
+          {!loading && !awaitingRedirect ? (
             <div className="relative mt-8 lg:hidden">
               <AuthBrandPanel benefitsOnly />
             </div>

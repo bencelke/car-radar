@@ -27,6 +27,7 @@ import {
   type SocialAuthProviderId,
 } from "@/lib/auth/social-auth";
 import { consumeAuthNext } from "@/lib/auth/social-auth";
+import { logPostLoginNavigation } from "@/lib/auth/post-login-navigation";
 import { sanitizeNextPath } from "@/lib/auth/sanitize-next-path";
 import { auth, isFirebaseConfigured } from "@/lib/firebase/client";
 import { isProfileAdmin, getUserProfile, syncUserProfile } from "@/lib/repositories/users";
@@ -147,7 +148,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const redirectResult = await processSocialRedirectResult();
           if (cancelled) return;
           if (redirectResult?.user) {
-            setPostAuthRedirect(consumeAuthNext());
+            const destination = consumeAuthNext();
+            setPostAuthRedirect(destination);
+            logPostLoginNavigation("social redirect completed", {
+              uid: redirectResult.user.uid,
+              destination,
+            });
           }
         } catch (error) {
           if (!cancelled) {
@@ -162,6 +168,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       setLoading(false);
+
+      if (nextUser) {
+        logPostLoginNavigation("auth state signed in", {
+          uid: nextUser.uid,
+          email: nextUser.email ?? null,
+          providers: extractAuthProviders(nextUser),
+        });
+      }
 
       if (!nextUser) {
         profileSyncRef.current = null;
